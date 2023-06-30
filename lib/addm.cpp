@@ -1,15 +1,16 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
 #include <map>
 #include <random> 
 #include "nlohmann/json.hpp"
 #include "ddm.h"
+#include "util.h"
 #include "addm.h"
 
 using json = nlohmann::json;
-
-int SEED = 10;
 
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
     std::vector<int> transitions, fixDists fixations, std::string fixDistType) {
@@ -26,7 +27,7 @@ FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies,
 }
 
 aDDMTrial::aDDMTrial(
-    unsigned int RT, int choice, float valueLeft, float valueRight, 
+    unsigned int RT, int choice, int valueLeft, int valueRight, 
     std::vector<int> fixItem, std::vector<int> fixTime, 
     std::vector<float> fixRDV, float uninterruptedLastFixTime) {
         this->RT = RT;
@@ -50,10 +51,10 @@ aDDM::aDDM(float d, float sigma, float theta, float barrier,
 }
 
 aDDMTrial aDDM::simulateTrial(
-    float valueLeft, float valueRight, FixationData fixationData, int timeStep, 
+    int valueLeft, int valueRight, FixationData fixationData, int timeStep, 
     int numFixDists, fixDists fixationDist, vector<int> timeBins) {
 
-    std::map<int, float> fixUnfixValueDiffs;
+    std::map<int, int> fixUnfixValueDiffs;
     fixUnfixValueDiffs.insert({1, valueLeft - valueRight});
     fixUnfixValueDiffs.insert({2, valueRight - valueLeft});
     std::vector<int> fixItem;
@@ -123,10 +124,9 @@ aDDMTrial aDDM::simulateTrial(
             prevFixatedItem = currFixLocation;
             // ASSUMING WE ARE USING FIXATION DATA DIST FOR NOW
             if (fixationDist.empty()) {
-                // ASSUMING FIXATION
+                // ASSUMING SIMPLE
                 if (fixationData.fixDistType == "fixation") {
-                    float valDiff = fixUnfixValueDiffs.at(currFixLocation);
-                    vector<float> fixTimes = fixationData.fixations.at(fixNumber).at(valDiff);
+                    vector<float> fixTimes = fixationData.fixations.at(fixNumber);
                     rIDX = rand() % fixTimes.size();
                     currFixTime = fixTimes.at(rIDX);
                 }
@@ -217,7 +217,4 @@ aDDMTrial aDDM::simulateTrial(
 }
 
 
-int main() {
-    std::cout << "hello" << std::endl;
-}
 

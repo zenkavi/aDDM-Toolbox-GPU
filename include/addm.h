@@ -8,9 +8,7 @@
 
 using namespace std;
 
-using fixDists = map<int, map<float, vector<float>>>;
-
-vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
+using fixDists = map<int, vector<float>>;
 
 class FixationData {
     private:
@@ -37,7 +35,7 @@ class aDDMTrial: public DDMTrial {
         float uninterruptedLastFixTime;
 
         aDDMTrial(
-            unsigned int RT, int choice, float valueLeft, float valueRight, 
+            unsigned int RT, int choice, int valueLeft, int valueRight, 
             vector<int> fixItem, vector<int> fixTime, 
             vector<float> fixRDV, float uninterruptedLastFixTime);
 };
@@ -53,7 +51,7 @@ class aDDM: public DDM {
     );
 
     aDDMTrial simulateTrial(
-        float valueLeft, float valueRight, FixationData fixationData, int timeStep=10, 
+        int valueLeft, int valueRight, FixationData fixationData, int timeStep=10, 
         int numFixDists=3, fixDists fixationDist={}, vector<int> timeBins={}
     );
 };

@@ -2,13 +2,12 @@
 #include <random>
 #include <fstream>
 #include "nlohmann/json.hpp"
+#include "util.h"
 #include "ddm.h"
 
 using json = nlohmann::json;
 
-float SEED = 1000;
-
-DDMTrial::DDMTrial(unsigned int RT, int choice, float valueLeft, float valueRight) {
+DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
     this->choice = choice;
     this->valueLeft = valueLeft;
@@ -29,7 +28,7 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
     this->bias = bias;            
 }
 
-DDMTrial DDM::simulateTrial(float ValueLeft, float ValueRight, int timeStep) {
+DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     float RDV = this->bias;
     int time = 0;
     int elapsedNDT = 0;
@@ -86,9 +85,9 @@ void exportData(DDM ddm, DDMTrial dt) {
     o << std::setw(4) << j << std::endl;        
 }
 
-int main() {
-    DDM ddm = DDM(0.005f, 0.065f, 1.0f); 
-    DDMTrial dt = ddm.simulateTrial(10, 10);
-    exportData(ddm, dt);
-}
+// int main() {
+//     DDM ddm = DDM(0.005f, 0.065f, 1.0f); 
+//     DDMTrial dt = ddm.simulateTrial(10, 10);
+//     exportData(ddm, dt);
+// }
 

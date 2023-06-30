@@ -8,12 +8,12 @@ class DDMTrial {
     public:
         unsigned int RT;
         int choice;
-        float valueLeft;
-        float valueRight;
+        int valueLeft;
+        int valueRight;
         std::vector<float>RDVs;
         int timeStep;
 
-        DDMTrial(unsigned int RT, int choice, float valueLeft, float valueRight);
+        DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight);
 
         DDMTrial() {}
 };
@@ -31,7 +31,7 @@ class DDM {
 
         DDM() {}
 
-        DDMTrial simulateTrial(float ValueLeft, float ValueRight, int timeStep=10);
+        DDMTrial simulateTrial(int ValueLeft, int ValueRight, int timeStep=10);
 };
 
 #endif 
