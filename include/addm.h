@@ -33,6 +33,7 @@ class aDDMTrial: public DDMTrial {
         vector<int> fixTime;
         vector<float> fixRDV;
         float uninterruptedLastFixTime;
+        std::vector<float>RDVs;
 
         aDDMTrial(
             unsigned int RT, int choice, int valueLeft, int valueRight, 

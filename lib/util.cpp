@@ -5,8 +5,12 @@
 #include <stdexcept>
 #include <cassert>
 #include <set>
+#include <fstream>
+#include "nlohmann/json.hpp"
 #include "util.h"
 #include "addm.h"
+
+using json = nlohmann::json;
 
 float SEED = 100;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
@@ -54,7 +58,6 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
                 trialIDs.insert(e.trial);
             }
         }
-        std::cout << "completed ID: " << subjectID << std::endl;
         std::vector<int> dataTrial;
         for (int trialID : trialIDs) {
             for (EXPEntry e : expData) {
@@ -64,14 +67,6 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
                     );
                 }   
             }
-        }
-        std::cout << "trial bases added to data" << std::endl;
-    }
-
-    for (auto const &pair : data) {
-        std::cout << "Parcode: " << pair.first << std::endl;
-        for (aDDMTrial t : pair.second) {
-            std::cout << "    Trial with RT: " << t.RT << " and choice: " << t.choice << std::endl;
         }
     }
 
@@ -124,23 +119,6 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
             t++;
         }
     }
-
-    for (auto const &pair : data) {
-        std::cout << "Parcode: " << pair.first << std::endl;
-        for (aDDMTrial t : pair.second) {
-            std::cout << "    Trial with RT: " << t.RT << " and choice: " << t.choice << std::endl;
-            std::cout << "        FixItem: "; 
-            for (int i : t.fixItem) {
-                std::cout << i << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "        FixTime: ";
-            for (int i : t.fixTime) {
-                std::cout << i << " ";
-            }
-            std::cout << std::endl;
-        }
-    }
     return data;
 }
 
@@ -169,7 +147,7 @@ FixationData getEmpiricalDistributions(
     std::map<int, std::vector<float>> fixations;
     for (int fn = 1; fn < numFixDists + 1; fn++) {
         if (fixDistType == "simple") {
-            fixations.at(fn) = {};
+            // fixations.at(fn) = {};
         } else {
             throw std::invalid_argument("simple is not implemented");
         }
@@ -181,6 +159,7 @@ FixationData getEmpiricalDistributions(
         }
     }
 
+    std::cout << boolalpha;
     for (int subjectID : subjectIDs) {
         int trialID = 0;
         for (aDDMTrial trial : data.at(subjectID)) {
@@ -250,6 +229,9 @@ FixationData getEmpiricalDistributions(
                         trial.fixTime.at(i) <= MaxFixTime
                         ) {
                         if (fixDistType == "simple") {
+                            if (!fixations.count(fixNumber)) {
+                                fixations.insert({fixNumber, {}});
+                            }
                             fixations.at(fixNumber).push_back(trial.fixTime.at(i));
                         } else {
                             throw std::invalid_argument("not implemented");
@@ -264,4 +246,39 @@ FixationData getEmpiricalDistributions(
     }
     float probFixLeftFirst = (float) countLeftFirst / (float) countTotalTrials;
     return FixationData(probFixLeftFirst, latencies, transitions, fixations, fixDistType);
+}
+
+void DDMexportData(DDM ddm, DDMTrial dt) {
+    std::ofstream o("data.json");
+    json j;
+    j["d"] = ddm.d;
+    j["sigma"] = ddm.sigma;
+    j["barrier"] = ddm.barrier;
+    j["NDT"] = ddm.nonDecisionTime;
+    j["bias"] = ddm.bias;
+    j["RT"] = dt.RT;
+    j["choice"] = dt.choice;
+    j["vl"] = dt.valueLeft;
+    j["vr"] = dt.valueRight;
+    j["RDVs"] = dt.RDVs;
+    j["timeStep"] = dt.timeStep;
+    o << std::setw(4) << j << std::endl;        
+}
+
+void aDDMexportData(aDDM addm, aDDMTrial adt) {
+    std::ofstream o("data.json");
+    json j;
+    j["d"] = addm.d;
+    j["sigma"] = addm.sigma;
+    j["theta"] = addm.theta;
+    j["barrier"] = addm.barrier;
+    j["NDT"] = addm.nonDecisionTime;
+    j["bias"] = addm.bias;
+    j["RT"] = adt.RT;
+    j["choice"] = adt.choice;
+    j["vl"] = adt.valueLeft;
+    j["vr"] = adt.valueRight;
+    j["RDVs"] = adt.RDVs;
+    j["timeStep"] = adt.timeStep;
+    o << std::setw(4) << j << std::endl;        
 }

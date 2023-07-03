@@ -4,11 +4,15 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <ctime>
+#include <time.h>
+#include <cstdlib>
 #include <random> 
 #include "nlohmann/json.hpp"
 #include "ddm.h"
 #include "util.h"
 #include "addm.h"
+
 
 using json = nlohmann::json;
 
@@ -54,6 +58,8 @@ aDDMTrial aDDM::simulateTrial(
     int valueLeft, int valueRight, FixationData fixationData, int timeStep, 
     int numFixDists, fixDists fixationDist, vector<int> timeBins) {
 
+    srand(time(NULL));
+
     std::map<int, int> fixUnfixValueDiffs;
     fixUnfixValueDiffs.insert({1, valueLeft - valueRight});
     fixUnfixValueDiffs.insert({2, valueRight - valueLeft});
@@ -67,19 +73,22 @@ aDDMTrial aDDM::simulateTrial(
     int uninterruptedLastFixTime;
     int RT;
 
+    std::vector<float>RDVs = {RDV};
+
     int rIDX = rand() % fixationData.latencies.size();
     int latency = fixationData.latencies.at(rIDX);
     int remainingNDT = this->nonDecisionTime - latency;
 
     std::random_device rd;
-    // std::mt19937 gen(rd()); 
-    std::mt19937 gen(SEED);
+    std::mt19937 gen(rd()); 
+    // std::mt19937 gen(SEED);
 
     for (int t = 0; t < latency / timeStep; t++) {
         std::normal_distribution<float> ndist(0, this->sigma);
         float inc = ndist(gen);
         RDV += inc;
-        
+        RDVs.push_back(RDV);
+
         if(RDV >= this->barrier || RDV <= -this->barrier) {
             if (RDV >= this->barrier) {
                 choice = -1;
@@ -100,6 +109,7 @@ aDDMTrial aDDM::simulateTrial(
     }
 
     fixRDV.push_back(RDV);
+    RDVs.push_back(RDV);
     fixItem.push_back(0);
     int dt = latency - (latency % timeStep);
     fixTime.push_back(dt);
@@ -125,10 +135,12 @@ aDDMTrial aDDM::simulateTrial(
             // ASSUMING WE ARE USING FIXATION DATA DIST FOR NOW
             if (fixationDist.empty()) {
                 // ASSUMING SIMPLE
-                if (fixationData.fixDistType == "fixation") {
+                if (fixationData.fixDistType == "simple") {
                     vector<float> fixTimes = fixationData.fixations.at(fixNumber);
                     rIDX = rand() % fixTimes.size();
                     currFixTime = fixTimes.at(rIDX);
+                } else {
+                    throw std::invalid_argument("not implemented");
                 }
             }
             if (fixNumber < numFixDists) {
@@ -145,6 +157,7 @@ aDDMTrial aDDM::simulateTrial(
                 std::normal_distribution<float> ndist(0, this->sigma);
                 float inc = ndist(gen);
                 RDV += inc;
+                RDVs.push_back(RDV);
 
                 if(RDV >= this->barrier || RDV <= -this->barrier) {
                     if (RDV >= this->barrier) {
@@ -181,7 +194,8 @@ aDDMTrial aDDM::simulateTrial(
             }
             std::normal_distribution<float> ndist(mean, this->sigma);
             float inc = ndist(gen);
-            RDV += inc;   
+            RDV += inc;
+            RDVs.push_back(RDV); 
 
             if(RDV >= this->barrier || RDV <= -this->barrier) {
                 if (RDV >= this->barrier) {
@@ -213,8 +227,8 @@ aDDMTrial aDDM::simulateTrial(
         time += dt;
     } 
 
-    return aDDMTrial(RT, choice, valueLeft, valueRight, fixItem, fixTime, fixRDV, uninterruptedLastFixTime);
+    aDDMTrial trial = aDDMTrial(RT, choice, valueLeft, valueRight, fixItem, fixTime, fixRDV, uninterruptedLastFixTime);
+    trial.RDVs = RDVs;
+    trial.timeStep = timeStep;
+    return trial;
 }
-
-
-

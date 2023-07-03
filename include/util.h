@@ -1,3 +1,6 @@
+#ifndef UTIL_H
+#define UTIL_H
+
 #include <vector>
 #include <map>
 #include <string>
@@ -30,7 +33,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 
     int timeStep=10, int MaxFixTime=3000,
-    int numFixDists=3, std::string fixDistType="fixation",
+    int numFixDists=3, std::string fixDistType="simple",
     std::vector<int> valueDiffs={-3,-2,-1,0,1,2,3},
     std::vector<int> subjectIDs={},
     bool useOddTrials=true, 
@@ -38,3 +41,9 @@ FixationData getEmpiricalDistributions(
     bool useCisTrials=true, 
     bool useTransTrials=true
     );
+
+void DDMexportData(DDM ddm, DDMTrial dt);
+
+void aDDMexportData(aDDM addm, aDDMTrial adt);
+
+#endif

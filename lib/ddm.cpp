@@ -5,8 +5,6 @@
 #include "util.h"
 #include "ddm.h"
 
-using json = nlohmann::json;
-
 DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
     this->choice = choice;
@@ -67,27 +65,3 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     trial.timeStep = timeStep;
     return trial;
 }
-
-void exportData(DDM ddm, DDMTrial dt) {
-    std::ofstream o("data.json");
-    json j;
-    j["d"] = ddm.d;
-    j["sigma"] = ddm.sigma;
-    j["barrier"] = ddm.barrier;
-    j["NDT"] = ddm.nonDecisionTime;
-    j["bias"] = ddm.bias;
-    j["RT"] = dt.RT;
-    j["choice"] = dt.choice;
-    j["vl"] = dt.valueLeft;
-    j["vr"] = dt.valueRight;
-    j["RDVs"] = dt.RDVs;
-    j["timeStep"] = dt.timeStep;
-    o << std::setw(4) << j << std::endl;        
-}
-
-// int main() {
-//     DDM ddm = DDM(0.005f, 0.065f, 1.0f); 
-//     DDMTrial dt = ddm.simulateTrial(10, 10);
-//     exportData(ddm, dt);
-// }
-
