@@ -3,5 +3,5 @@
 #include "util.h"
 
 int main() {
-    auto out = loadDataFromCSV("exp.csv", "fix.csv", true);
+    auto out = loadDataFromCSV("data/2exp.csv", "data/2fix.csv");
 }

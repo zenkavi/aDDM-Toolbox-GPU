@@ -6,10 +6,26 @@
 extern float SEED;
 extern vector<string> validFixDistTypes;
 
+struct EXPEntry {
+    int parcode;
+    int trial;
+    int rt;
+    int choice;
+    int item_left;
+    int item_right;
+    int valid;
+};
+
+struct FIXEntry {
+    int parcode;
+    int trial;
+    int fix_item;
+    int fix_time;
+};
+
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
-    std::string expDataFilename, 
-    std::string fixDataFilename, 
-    bool convertItemValues=false);
+    std::string expDataFilename,
+    std::string fixDataFilename);
 
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 

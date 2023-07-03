@@ -3,44 +3,37 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <cassert>
+#include <set>
 #include "util.h"
 #include "addm.h"
-
-struct EXPEntry {
-    int parcode;
-    int trial;
-    double rt;
-    int choice;
-    int item_left;
-    int item_right;
-    int valid;
-};
 
 float SEED = 100;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
 
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     std::string expDataFilename, 
-    std::string fixDataFilename, 
-    bool convertItemValues) {
+    std::string fixDataFilename) {
 
-    std::ifstream file(expDataFilename);
+    // subjectID -> aDDM Trial 
+    std::map<int, std::vector<aDDMTrial>> data;
+    std::set<int> subjectIDs;
+
+    std::ifstream expFile(expDataFilename);
     std::vector<EXPEntry> expData;
-
-    std::string line;
-    std::getline(file, line);  // Read and discard the header line
-
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
+    std::string eline;
+    std::getline(expFile, eline);
+    while (std::getline(expFile, eline)) {
+        std::stringstream ss(eline);
         std::string field;
         EXPEntry entry;
-
         std::getline(ss, field, ',');
         entry.parcode = std::stoi(field);
+        subjectIDs.insert(entry.parcode);
         std::getline(ss, field, ',');
         entry.trial = std::stoi(field);
         std::getline(ss, field, ',');
-        entry.rt = std::stod(field);
+        entry.rt = std::stoi(field);
         std::getline(ss, field, ',');
         entry.choice = std::stoi(field);
         std::getline(ss, field, ',');
@@ -51,22 +44,103 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         entry.valid = std::stoi(field);
         expData.push_back(entry);
     }
+    expFile.close();
 
-    file.close();
-
-    std::map<int, std::vector<aDDMTrial>> data;
-    
-    for (const auto& entry : expData) {
-        std::cout << "parcode: " << entry.parcode << std::endl;
-        std::cout << "trial: " << entry.trial << std::endl;
-        std::cout << "rt: " << entry.rt << std::endl;
-        std::cout << "choice: " << entry.choice << std::endl;
-        std::cout << "item_left: " << entry.item_left << std::endl;
-        std::cout << "item_right: " << entry.item_right << std::endl;
-        std::cout << "valid: " << entry.valid << std::endl;
-        std::cout << "------------------" << std::endl;
+    for (int subjectID : subjectIDs) {
+        data.insert({subjectID, {}});
+        std::set<int> trialIDs;
+        for (EXPEntry e : expData) {
+            if (e.parcode == subjectID) {
+                trialIDs.insert(e.trial);
+            }
+        }
+        std::cout << "completed ID: " << subjectID << std::endl;
+        std::vector<int> dataTrial;
+        for (int trialID : trialIDs) {
+            for (EXPEntry e : expData) {
+                if (e.trial == trialID && e.parcode == subjectID) {
+                    data.at(subjectID).push_back(
+                        aDDMTrial(e.rt, e.choice, e.item_left, e.item_right)
+                    );
+                }   
+            }
+        }
+        std::cout << "trial bases added to data" << std::endl;
     }
 
+    for (auto const &pair : data) {
+        std::cout << "Parcode: " << pair.first << std::endl;
+        for (aDDMTrial t : pair.second) {
+            std::cout << "    Trial with RT: " << t.RT << " and choice: " << t.choice << std::endl;
+        }
+    }
+
+    std::ifstream fixFile(fixDataFilename);
+    std::vector<FIXEntry> fixData;
+    subjectIDs.clear();
+    std::string fline;
+    std::getline(fixFile, fline); 
+    while (std::getline(fixFile, fline)) {
+        std::stringstream ss(fline);
+        std::string field;
+        FIXEntry entry;
+        std::getline(ss, field, ',');
+        entry.parcode = std::stoi(field);
+        subjectIDs.insert(entry.parcode);
+        std::getline(ss, field, ',');
+        entry.trial = std::stoi(field);
+        std::getline(ss, field, ',');
+        entry.fix_item = std::stoi(field);
+        std::getline(ss, field, ',');
+        entry.fix_time = std::stoi(field);
+        fixData.push_back(entry);
+    }
+    fixFile.close();
+
+    for (int subjectID : subjectIDs) {
+        if (!data.count(subjectID)) {
+            continue;
+        }
+        std::set<int> trialIDs;
+        std::vector<FIXEntry> subjectEntries;
+        for (FIXEntry f : fixData) {
+            if (f.parcode == subjectID) {
+                trialIDs.insert(f.trial);
+                subjectEntries.push_back(f);
+            }
+        }
+        int t = 0;
+        for (int trialID : trialIDs) {
+            std::vector<int> fixItem;
+            std::vector<int> fixTime;
+            for (FIXEntry fs : subjectEntries) {
+                if (fs.trial == trialID) {
+                    fixItem.push_back(fs.fix_item);
+                    fixTime.push_back(fs.fix_time);
+                }
+            }
+            data.at(subjectID).at(t).fixItem = fixItem;
+            data.at(subjectID).at(t).fixTime = fixTime;
+            t++;
+        }
+    }
+
+    for (auto const &pair : data) {
+        std::cout << "Parcode: " << pair.first << std::endl;
+        for (aDDMTrial t : pair.second) {
+            std::cout << "    Trial with RT: " << t.RT << " and choice: " << t.choice << std::endl;
+            std::cout << "        FixItem: "; 
+            for (int i : t.fixItem) {
+                std::cout << i << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "        FixTime: ";
+            for (int i : t.fixTime) {
+                std::cout << i << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
     return data;
 }
 
@@ -82,11 +156,11 @@ FixationData getEmpiricalDistributions(
     bool useCisTrials, 
     bool useTransTrials) {
 
-    // if (!std::count(
-    // validFixDistTypes.begin(), validFixDistTypes.end(), fixDistType)) {
-    //     throw std::invalid_argument(
-    //         "Argument type must be one of {simple, difficulty, fixation}");
-    // }
+    if (!std::count(
+    validFixDistTypes.begin(), validFixDistTypes.end(), fixDistType)) {
+        throw std::invalid_argument(
+            "Argument type must be one of {simple, difficulty, fixation}");
+    }
 
     int countLeftFirst = 0;
     int countTotalTrials = 0;
