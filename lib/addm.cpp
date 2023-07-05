@@ -14,8 +14,6 @@
 #include "addm.h"
 
 
-using json = nlohmann::json;
-
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
     std::vector<int> transitions, fixDists fixations, std::string fixDistType) {
     if (!std::count(
@@ -33,11 +31,8 @@ FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies,
 aDDMTrial::aDDMTrial(
     unsigned int RT, int choice, int valueLeft, int valueRight, 
     std::vector<int> fixItem, std::vector<int> fixTime, 
-    std::vector<float> fixRDV, float uninterruptedLastFixTime) {
-        this->RT = RT;
-        this->choice = choice;
-        this->valueLeft = valueLeft;
-        this->valueRight = valueRight;
+    std::vector<float> fixRDV, float uninterruptedLastFixTime) :
+    DDMTrial(RT, choice, valueLeft, valueRight) {
         this->fixItem = fixItem;
         this->fixTime = fixTime;
         this->fixRDV = fixRDV;
@@ -45,13 +40,9 @@ aDDMTrial::aDDMTrial(
 }
 
 aDDM::aDDM(float d, float sigma, float theta, float barrier, 
-    unsigned int nonDecisionTime, float bias) {
-        this->d = d;
-        this->sigma = sigma;
+    unsigned int nonDecisionTime, float bias) : 
+    DDM(d, sigma, barrier, nonDecisionTime, bias) {
         this->theta = theta;
-        this->barrier = barrier;        
-        this->nonDecisionTime = nonDecisionTime;
-        this->bias = bias;
 }
 
 aDDMTrial aDDM::simulateTrial(
@@ -67,6 +58,9 @@ aDDMTrial aDDM::simulateTrial(
     std::vector<int> fixTime;
     std::vector<float> fixRDV;
 
+    std::random_device rd;
+    std::mt19937 gen(rd()); 
+
     float RDV = this->bias;
     int time = 0;
     int choice; 
@@ -75,12 +69,11 @@ aDDMTrial aDDM::simulateTrial(
 
     std::vector<float>RDVs = {RDV};
 
-    int rIDX = rand() % fixationData.latencies.size();
+    std::uniform_int_distribution<std::size_t> ludist(0, fixationData.latencies.size() - 1);
+    int rIDX = ludist(gen);
     int latency = fixationData.latencies.at(rIDX);
     int remainingNDT = this->nonDecisionTime - latency;
 
-    std::random_device rd;
-    std::mt19937 gen(rd()); 
     // std::mt19937 gen(SEED);
 
     for (int t = 0; t < latency / timeStep; t++) {
@@ -137,7 +130,8 @@ aDDMTrial aDDM::simulateTrial(
                 // ASSUMING SIMPLE
                 if (fixationData.fixDistType == "simple") {
                     vector<float> fixTimes = fixationData.fixations.at(fixNumber);
-                    rIDX = rand() % fixTimes.size();
+                    std::uniform_int_distribution<std::size_t> fudist(0, fixTimes.size() - 1);
+                    rIDX = fudist(gen);
                     currFixTime = fixTimes.at(rIDX);
                 } else {
                     throw std::invalid_argument("not implemented");

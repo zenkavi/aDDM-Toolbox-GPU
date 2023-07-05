@@ -159,7 +159,6 @@ FixationData getEmpiricalDistributions(
         }
     }
 
-    std::cout << boolalpha;
     for (int subjectID : subjectIDs) {
         int trialID = 0;
         for (aDDMTrial trial : data.at(subjectID)) {
@@ -249,7 +248,7 @@ FixationData getEmpiricalDistributions(
 }
 
 void DDMexportData(DDM ddm, DDMTrial dt) {
-    std::ofstream o("data.json");
+    std::ofstream o("results/data.json");
     json j;
     j["d"] = ddm.d;
     j["sigma"] = ddm.sigma;
@@ -266,7 +265,7 @@ void DDMexportData(DDM ddm, DDMTrial dt) {
 }
 
 void aDDMexportData(aDDM addm, aDDMTrial adt) {
-    std::ofstream o("data.json");
+    std::ofstream o("results/data.json");
     json j;
     j["d"] = addm.d;
     j["sigma"] = addm.sigma;

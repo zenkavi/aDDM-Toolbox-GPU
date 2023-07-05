@@ -3,7 +3,7 @@ import numpy as np
 import json
 
 def main():
-    with open('data.json') as file:
+    with open('results/data.json') as file:
         data = json.load(file)
 
     rdvs = data["RDVs"]
@@ -16,7 +16,6 @@ def main():
     plt.axhline(-barrier, color="grey")
     plt.axhline(bias, color="grey")
 
-    print(np.median(x))
     plt.text(0, -barrier * 0.95, f"d: {round(data['d'], 3)}\n"\
              f"RT: {data['RT']}\nsigma: {round(data['sigma'], 3)}")
 

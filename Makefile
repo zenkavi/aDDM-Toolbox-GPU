@@ -1,12 +1,17 @@
+CXX := g++
+LIB := -L lib
+INC := -I include
+
+SRC_DIR := lib
+BUILD_DIR := bin 
+OBJ_DIR := obj 
+
 all:
-	g++ main.cpp lib/ddm.cpp lib/addm.cpp lib/util.cpp -L lib -I include -o main
+	g++ src/main.cpp lib/ddm.cpp lib/addm.cpp lib/util.cpp -L lib -I include -o bin/main
 
-ddm:
-	g++ lib/ddm.cpp -L lib -I include -o main
-
-addm:
-	g++ lib/addm.cpp -L lib -I include -o main
+sim:
+	$(CXX) src/simulate.cpp lib/ddm.cpp lib/addm.cpp lib/util.cpp $(LIB) $(INC) -o bin/simulate
 
 run: 
-	./main
+	bin/main
 	python3 plots.py
