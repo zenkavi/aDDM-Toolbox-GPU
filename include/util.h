@@ -7,6 +7,7 @@
 #include "addm.h"
 
 extern float SEED;
+extern float DECAY;
 extern vector<string> validFixDistTypes;
 
 struct EXPEntry {
@@ -25,6 +26,8 @@ struct FIXEntry {
     int fix_item;
     int fix_time;
 };
+
+double probabilityDensityFunction(float mean, float sigma, float x);
 
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     std::string expDataFilename,

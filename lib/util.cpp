@@ -6,6 +6,7 @@
 #include <cassert>
 #include <set>
 #include <fstream>
+#include <cmath>
 #include "nlohmann/json.hpp"
 #include "util.h"
 #include "addm.h"
@@ -13,7 +14,16 @@
 using json = nlohmann::json;
 
 float SEED = 100;
+float DECAY = 0;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
+
+#include <cmath> 
+
+double probabilityDensityFunction(float mean, float sigma, float x) {
+    double firstTerm =  1 / (sigma * (sqrt(2 * M_PI)));
+    double secondTerm = exp(-0.5 * pow((x - mean) / sigma, 2));
+    return firstTerm * secondTerm; 
+}
 
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     std::string expDataFilename, 
