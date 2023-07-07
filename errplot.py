@@ -25,7 +25,6 @@ def main():
     plt.xlabel("cpp values")
     plt.ylabel("python values")
 
-    plt.show()
     currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
     plt.savefig("imgs/py_cpp_error_" + currTime + ".png")
 
