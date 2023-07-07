@@ -1,4 +1,5 @@
 CXX := g++
+CXXLIBS := lib/ddm.cpp lib/addm.cpp lib/util.cpp
 LIB := -L lib
 INC := -I include
 
@@ -6,12 +7,18 @@ SRC_DIR := lib
 BUILD_DIR := bin 
 OBJ_DIR := obj 
 
-all:
-	g++ src/main.cpp lib/ddm.cpp lib/addm.cpp lib/util.cpp -L lib -I include -o bin/main
+main:
+	$(CXX) src/main.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/main
 
 sim:
-	$(CXX) src/simulate.cpp lib/ddm.cpp lib/addm.cpp lib/util.cpp $(LIB) $(INC) -o bin/simulate
+	$(CXX) src/simulate_addm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/sim_addm
+	$(CXX) src/simulate_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/sim_ddm
 
+nll:
+	$(CXX) src/nll_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/nll_ddm
+
+all: sim main nll
+	
 run: 
 	bin/main
 	python3 plots.py

@@ -3,14 +3,12 @@
 #include <random>
 #include <ctime>
 #include <fstream>
-#include "addm.h"
 #include "ddm.h"
 #include "util.h"
 
 int N = 1000;
 float d = 0.005;
 float sigma = 0.07;
-float theta = 0.5;
 float barrier = 1.0;
 
 std::vector<int> valDiffs = {-3, -2, -1, 0, 1, 2, 3};
@@ -28,9 +26,7 @@ int main() {
     srand(time(NULL));
 
     std::cout << "reading data..." << std::endl;
-    std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
-    FixationData fixationData = getEmpiricalDistributions(data);
-    aDDM addm = aDDM(d, sigma, theta, barrier);
+    DDM ddm = DDM(d, sigma, barrier);
 
     for (int i = 0; i < N; i++) {
         if (i % 50 == 0) {
@@ -44,11 +40,11 @@ int main() {
         int valDiff = valDiffs.at(rIDX);
         int valueLeft = 3;
         int valueRight = valueLeft - valDiff;
-        aDDMTrial adt = addm.simulateTrial(valueLeft, valueRight, fixationData);
+        DDMTrial dt = ddm.simulateTrial(valueLeft, valueRight);
 
         trialOutput t; 
-        t.choice = adt.choice;
-        t.RT = adt.RT;
+        t.choice = dt.choice;
+        t.RT = dt.RT;
         t.valDiff = valDiff;
 
         outputs.push_back(t);
@@ -56,7 +52,7 @@ int main() {
 
     std::cout << "printing outputs..." << std::endl;
     std::ofstream fp;
-    fp.open("results/simulations.csv");
+    fp.open("results/ddm_simulations.csv");
     fp << "choice,RT,valDiff\n";
     for (trialOutput t : outputs) {
         fp << t.choice << "," << t.RT << "," << t.valDiff << "\n";

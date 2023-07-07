@@ -15,4 +15,5 @@ int main() {
     DDM ddm = DDM(0.005f, 0.065f, 1.0f); 
     DDMTrial dt = ddm.simulateTrial(10, 10);
     double p = ddm.getTrialLikelihood(dt);
+    std::cout << p << std::endl;
 }

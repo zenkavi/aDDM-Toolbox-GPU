@@ -5,8 +5,9 @@
 #include <stdexcept>
 #include <cassert>
 #include <set>
+#include <cmath> 
 #include <fstream>
-#include <cmath>
+#include <boost/math/distributions/normal.hpp>
 #include "nlohmann/json.hpp"
 #include "util.h"
 #include "addm.h"
@@ -17,12 +18,17 @@ float SEED = 100;
 float DECAY = 0;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
 
-#include <cmath> 
 
 double probabilityDensityFunction(float mean, float sigma, float x) {
-    double firstTerm =  1 / (sigma * (sqrt(2 * M_PI)));
-    double secondTerm = exp(-0.5 * pow((x - mean) / sigma, 2));
-    return firstTerm * secondTerm; 
+    boost::math::normal_distribution<double> dist(mean, sigma);
+    double pdf = boost::math::pdf(dist, x);
+    return pdf;
+}
+
+double cumulativeDensityFunction(float mean, float sigma, float x) {
+    boost::math::normal_distribution<double> dist(mean, sigma);
+    double cdf = boost::math::cdf(dist, x);
+    return cdf;
 }
 
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(

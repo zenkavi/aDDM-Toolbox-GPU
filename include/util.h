@@ -29,6 +29,8 @@ struct FIXEntry {
 
 double probabilityDensityFunction(float mean, float sigma, float x);
 
+double cumulativeDensityFunction(float mean, float sigma, float x);
+
 std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     std::string expDataFilename,
     std::string fixDataFilename);

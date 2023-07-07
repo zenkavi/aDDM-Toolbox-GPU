@@ -1,13 +1,19 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import json
 from typing import Dict, List
+from datetime import datetime
+import sys
 
 def main():
     val_diff_to_rts: Dict[int, List[int]] = {}
     choice_to_rts: Dict[int, List[int]] = {-1 : list(), 1 : list()}
-    df = pd.read_csv("results/simulations.csv")
+    addm = False
+    if (len(sys.argv) > 1 and sys.argv[1] == "addm"):
+        addm = True
+        df = pd.read_csv("results/addm_simulations.csv")
+    else:
+        df = pd.read_csv("results/ddm_simulations.csv")
     df = df.reset_index()
 
     for _, row in df.iterrows():
@@ -23,12 +29,34 @@ def main():
         else:
             choice_to_rts[choice] = [rt]
 
-    sorted(val_diff_to_rts)
-    for vd, rts in val_diff_to_rts.items():
-        plt.hist(rts, bins=range(0, 8000, 200), label=vd, edgecolor='black', alpha=0.5)
-    
-    plt.legend()
-    plt.show()
+    keys = list(val_diff_to_rts.keys())
+    keys.sort()
+    val_diff_to_rts = {i : val_diff_to_rts[i] for i in keys}
 
+    fig, axs = plt.subplots(7)
+    plt.rcParams['axes.titley'] = 1.0
+    plt.rcParams['axes.titlepad'] = -14
+    i = 0
+    for vd, rts in val_diff_to_rts.items():
+        mean = np.mean(rts)
+        axs[i].hist(rts, label=vd, bins=range(0, 5000, 100))
+        axs[i].set_title(f"value difference={vd}")
+        axs[i].set_ylim([0, 30])
+        axs[i].axvline(mean, color="red")
+        i+= 1
+    axs[6].set_xlabel("Reaction Time (ms)")
+    axs[3].set_ylabel('Count')
+    fig.set_figwidth(18)
+    fig.set_figheight(15)
+
+    currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
+    if addm:
+        plt.suptitle("aDDM Reaction Time Distribution for Value Differences")   
+        plt.savefig("imgs/addm_rt_dist_" + currTime + ".png")
+    else:
+        plt.suptitle("DDM Reaction Time Distribution for Value Differences")  
+        plt.savefig("imgs/ddm_rt_dist_" + currTime + ".png")
+
+   
 if __name__=="__main__":
     main()

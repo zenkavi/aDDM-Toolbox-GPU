@@ -31,7 +31,6 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
 }
 
 double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateStep) {
-    std::cout << "RT " << trial.RT << std::endl;
     int numTimeSteps = trial.RT / timeStep;
     if (numTimeSteps < 1) {
         throw std::invalid_argument("trial response time is smaller than time step.");
@@ -49,13 +48,9 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
     int halfNumStateBins = ceil(this->barrier / approxStateStep);
     float stateStep = this->barrier / (halfNumStateBins + 0.5);
     std::vector<float> states;
-    for (float ss = barrierDown.at(0) + (stateStep / 2);  ss < barrierUp.at(0) - (stateStep / 2); ss += stateStep) {
+    for (float ss = barrierDown.at(0) + (stateStep / 2); ss < barrierUp.at(0) - (stateStep / 2); ss += stateStep) {
         states.push_back(ss);
     }
-
-    std::cout << "STATES" << std::endl;
-    for (auto s : states) { std::cout << s << std::endl; }
-    std::cout << "------" << std::endl;
 
     float biasStateVal = MAXFLOAT;
     int biasState = 0;
@@ -89,15 +84,6 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
         }
     }
 
-    for (auto i : changeMatrix) {
-        for (float k : i) {
-            std::string ks = std::to_string(k);
-            ks += std::string(10 - ks.length(), ' ');
-            std::cout << ks;
-        }
-        std::cout << std::endl;
-    }
-
     std::vector<std::vector<float>> changeUp(states.size(), std::vector<float>(numTimeSteps));
     for (size_t i = 0; i < states.size(); i++) {
         for (size_t j = 0; j < numTimeSteps; j++) {
@@ -122,7 +108,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
             mean = this->d * (trial.valueLeft - trial.valueRight);
         }
 
-        std::cout << "PROBABILITY CHANGE MATRIX" << std::endl;
+        // Compute the likelihood of each change in the matrix using a probability density functions with parameters mean and sigma. 
         std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size())); 
         for (size_t i = 0; i < states.size(); i++) {
             for (size_t j = 0; j < states.size(); j++) {
@@ -130,46 +116,95 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
                 probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
             }
         }
+        // Fetch the probability states for the previous timeStep
         std::vector<double> prTimeSlice(states.size());
         for (size_t i = 0; i < states.size(); i++) {
             prTimeSlice[i] = prStates[i][time - 1];
         }
-        std::vector<double> probChangeDotProduct(states.size()); 
+        // Compute the dot product between the change matrix and previous timeStep's probabilities
+        std::vector<double> prStatesNew(states.size()); 
         for (size_t i = 0; i < states.size(); i++) {
             double row_sum = 0;
             for (size_t j = 0; j < states.size(); j++) {
                 row_sum += probDistChangeMatrix[i][j] * prTimeSlice[j];
             }
-            probChangeDotProduct[i] = stateStep * row_sum; 
+            prStatesNew[i] = stateStep * row_sum; 
         }
-
-
-
-        for (auto i : probDistChangeMatrix) {
-            for (float k : i) {
-                std::string ks = std::to_string(k);
-                ks += std::string(10 - ks.length(), ' ');
-                std::cout << ks;
+        // Check for states that are now out-of-bounds based on decay
+        for (int i = 0; i < states.size(); i++) {
+            if (states[i] > barrierUp[time] || states[i] < barrierDown[time]) {
+                prStatesNew[i] = 0;
             }
-            std::cout << std::endl;
         }
 
-        std::cout << "probability vector" << std::endl;
-        for (auto i : prTimeSlice) {
-            std::cout << i << std::endl;
+        std::vector<float> currChangeUp;
+        for (auto s : changeUp) {
+            currChangeUp.push_back(s.at(time));
+        }
+        std::vector<double> changeUpCDFs;
+        for (int i = 0; i < currChangeUp.size(); i++) {
+            float x = currChangeUp[i];
+            changeUpCDFs.push_back(
+                1 - cumulativeDensityFunction(mean, this->sigma, x)
+            );
+        }
+        assert(changeUpCDFs.size() == prTimeSlice.size());
+        double tempUpCross = 0;
+        for (int i = 0; i < prTimeSlice.size(); i++) {
+            tempUpCross += changeUpCDFs[i] * prTimeSlice[i];
         }
 
-        std::cout << "dot product" << std::endl;
-        for (auto i : probChangeDotProduct) {
-            std::cout << i << std::endl;
+        std::vector<float> currChangeDown;
+        for (auto s: changeDown) {
+            currChangeDown.push_back(s.at(time));
+        }
+        std::vector<double> changeDownCDFs;
+        for (int i = 0; i < currChangeDown.size(); i++) {
+            float x = currChangeDown[i];
+            changeDownCDFs.push_back(
+                cumulativeDensityFunction(mean, this->sigma, x)
+            );
+        }
+        assert(changeDownCDFs.size() == prTimeSlice.size());
+        double tempDownCross = 0;
+        for (int i = 0; i < prTimeSlice.size(); i++) {
+            tempDownCross += changeDownCDFs[i] * prTimeSlice[i];
         }
 
-        break;
+        double sumIn = 0; 
+        for (double prob : prTimeSlice) {
+            sumIn += prob;
+        }
+        double sumCurrent = tempUpCross + tempDownCross;
+        for (double prob : prStatesNew) {
+            sumCurrent += prob;
+        }
+        double normFactor = sumIn / sumCurrent;
+        for (double prob : prStatesNew) {
+            prob *= normFactor;
+        }
+        tempUpCross *= normFactor;
+        tempDownCross *= normFactor;
+        for (int i = 0; i < prStates.size(); i++) {
+            prStates[i][time] = prStatesNew[i];
+        }
+        probUpCrossing[time] = tempUpCross;
+        probDownCrossing[time] = tempDownCross;
     }
 
-
-    return 0;
+    double likelihood = 0; 
+    if (trial.choice == -1) {
+        if (probUpCrossing[probUpCrossing.size() - 1] > 0) {
+            likelihood = probUpCrossing[probUpCrossing.size() - 1];
+        } 
+    } else if (trial.choice == 1) {
+        if (probDownCrossing[probDownCrossing.size() - 1] > 0) {
+            likelihood = probDownCrossing[probDownCrossing.size() - 1];
+        }
+    }    
+    return likelihood;
 }
+
 
 DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     float RDV = this->bias;
