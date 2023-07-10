@@ -11,14 +11,17 @@ main:
 	$(CXX) src/main.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/main
 
 sim:
-	$(CXX) src/simulate_addm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/sim_addm
-	$(CXX) src/simulate_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/sim_ddm
+	$(CXX) src/simulate_addm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_sim
+	$(CXX) src/simulate_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_sim
 
 nll:
-	$(CXX) src/nll_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/nll_ddm
+	$(CXX) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll
 
-all: sim main nll
+mle: 
+	$(CXX) src/ddm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_mle
+
+all: sim main nll mle
 	
-run: 
-	bin/main
-	python3 plots.py
+clean: 
+	rm -rf bin/*
+	touch bin/.gitkeep

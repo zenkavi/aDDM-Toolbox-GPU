@@ -45,6 +45,10 @@ aDDM::aDDM(float d, float sigma, float theta, float barrier,
         this->theta = theta;
 }
 
+double aDDM::getTrialLikelihood(aDDMTrial trial, int timestep, float approxstateStep) {
+    return 0.0;
+}
+
 aDDMTrial aDDM::simulateTrial(
     int valueLeft, int valueRight, FixationData fixationData, int timeStep, 
     int numFixDists, fixDists fixationDist, vector<int> timeBins) {

@@ -31,7 +31,7 @@ class DDM {
 
         DDM() {}
 
-        double getTrialLikelihood(DDMTrial trial, int timeStep=10, float approxStateStep=0.1);
+        double getTrialLikelihood(DDMTrial trial, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
         DDMTrial simulateTrial(int ValueLeft, int ValueRight, int timeStep=10);
 };

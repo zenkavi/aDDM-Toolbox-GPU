@@ -4,10 +4,27 @@
 #include <string> 
 #include <random>
 #include <fstream>
+#include <iomanip> 
 #include "nlohmann/json.hpp"
 #include "util.h"
 #include "ddm.h"
 
+template <class T> 
+void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
+    std::cout << name << std::endl;
+    for (auto row : mat) {
+        for (auto f : row) {
+            std::cout << f;
+            if (f >= 0 && f < 10) {
+                std::cout << "  ";
+            } else {
+                std::cout << " ";
+            }
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "------" << std::endl;    
+}
 
 DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
@@ -30,11 +47,15 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
     this->bias = bias;            
 }
 
-double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateStep) {
+double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float approxStateStep) {
     int numTimeSteps = trial.RT / timeStep;
     if (numTimeSteps < 1) {
         throw std::invalid_argument("trial response time is smaller than time step.");
     }
+    if (debug) {
+        std::cout << std::setprecision(6) << std::fixed;
+    }
+
     std::vector<float> barrierUp(numTimeSteps);
     std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
     std::vector<float> barrierDown(numTimeSteps);
@@ -48,10 +69,19 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
     int halfNumStateBins = ceil(this->barrier / approxStateStep);
     float stateStep = this->barrier / (halfNumStateBins + 0.5);
     std::vector<float> states;
-    for (float ss = barrierDown.at(0) + (stateStep / 2); ss < barrierUp.at(0) - (stateStep / 2); ss += stateStep) {
+    for (float ss = barrierDown.at(0) + (stateStep / 2); ss <= barrierUp.at(0) - (stateStep / 2); ss += stateStep) {
         states.push_back(ss);
     }
 
+    if (debug) {
+        std::cout << "STATES" << std::endl;
+        for (float s : states) {
+            std::cout << s << " " << std::endl;
+        }
+        std::cout << "------" << std::endl;
+    }
+    
+    // Get index of state corresponding to the bias
     float biasStateVal = MAXFLOAT;
     int biasState = 0;
     for (int i = 0; i < states.size(); i++) {
@@ -62,6 +92,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
         }
     }
     
+    // Initialize an empty probability state grid
     std::vector<std::vector<double>> prStates; // prStates[state][timeStep]
     for (int i = 0; i < states.size(); i++) {
         prStates.push_back({});
@@ -69,6 +100,9 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
             prStates.at(i).push_back(0);
         }
     }
+
+    // Initialize vectors corresponding to the probability of crossing the 
+    // top or bottom barriers at each timestep. 
     std::vector<double> probUpCrossing; 
     std::vector<double> probDownCrossing;
     for (int i = 0; i < numTimeSteps; i++) {
@@ -77,29 +111,48 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
     }
     prStates.at(biasState).at(0) = 1; 
 
+    // Initialize a change matrix where each value at (i, j) 
+    // indicates the difference between states[i] and states[j] 
     std::vector<std::vector<float>> changeMatrix(states.size(), std::vector<float>(states.size())); 
     for (size_t i = 0; i < states.size(); i++) {
         for (size_t j = 0; j < states.size(); j++) {
             changeMatrix[i][j] = states[i] - states[j];
         }
     }
+    if (debug) {
+        printMatrix<float>(changeMatrix, "CHANGE MATRIX");
+    }
 
+    // Distance from every state to the top barrier at each timestep
     std::vector<std::vector<float>> changeUp(states.size(), std::vector<float>(numTimeSteps));
     for (size_t i = 0; i < states.size(); i++) {
         for (size_t j = 0; j < numTimeSteps; j++) {
             changeUp[i][j] = barrierUp[j] - states[i];
         }
     }
+    if (debug) {
+        printMatrix<float>(changeUp, "CHANGE UP");
+    }
 
+
+    // Distance from every state to the bottom barrier at each timestep
     std::vector<std::vector<float>> changeDown(states.size(), std::vector<float>(numTimeSteps));
     for (size_t i = 0; i < states.size(); i++) {
         for (size_t j = 0; j < numTimeSteps; j++) {
             changeDown[i][j] = barrierDown[j] - states[i];
         }
     }
+    if (debug) {
+        printMatrix<float>(changeDown, "CHANGE DOWN");
+    }
 
     int elapsedNDT = 0;
     for (int time = 1; time < numTimeSteps; time++) {
+        if (debug) {
+            std::cout << "============" << std::endl;
+            std::cout << "TIMESTEP " << time << std::endl;
+            std::cout << "============" << std::endl;
+        }
         float mean;
         if (elapsedNDT < this->nonDecisionTime / timeStep) {
             mean = 0;
@@ -107,7 +160,10 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
         } else {
             mean = this->d * (trial.valueLeft - trial.valueRight);
         }
-
+        if (debug) {
+            std::cout << "mean: " << mean << std::endl;
+        }
+        
         // Compute the likelihood of each change in the matrix using a probability density functions with parameters mean and sigma. 
         std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size())); 
         for (size_t i = 0; i < states.size(); i++) {
@@ -116,6 +172,10 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
                 probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
             }
         }
+        if (debug) {
+            printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
+        }
+
         // Fetch the probability states for the previous timeStep
         std::vector<double> prTimeSlice(states.size());
         for (size_t i = 0; i < states.size(); i++) {
@@ -136,7 +196,14 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
                 prStatesNew[i] = 0;
             }
         }
-
+        if (debug) {
+            std::cout << "PR STATES NEW" << std::endl;
+            for (double d : prStatesNew) {
+                std::cout << d << std::endl;
+            }
+            std::cout << "------" << std::endl;
+        }
+        
         std::vector<float> currChangeUp;
         for (auto s : changeUp) {
             currChangeUp.push_back(s.at(time));
@@ -202,6 +269,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, int timeStep, float approxStateSt
             likelihood = probDownCrossing[probDownCrossing.size() - 1];
         }
     }    
+    assert(likelihood < 1);
     return likelihood;
 }
 

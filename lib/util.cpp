@@ -22,7 +22,7 @@ vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
 double probabilityDensityFunction(float mean, float sigma, float x) {
     boost::math::normal_distribution<double> dist(mean, sigma);
     double pdf = boost::math::pdf(dist, x);
-    return pdf;
+    return pdf; 
 }
 
 double cumulativeDensityFunction(float mean, float sigma, float x) {
@@ -35,8 +35,9 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     std::string expDataFilename, 
     std::string fixDataFilename) {
 
-    // subjectID -> aDDM Trial 
+    // subjectID -> aDDM Trials
     std::map<int, std::vector<aDDMTrial>> data;
+    std::map<int, std::vector<EXPEntry>> IDtoEXP;
     std::set<int> subjectIDs;
 
     std::ifstream expFile(expDataFilename);
@@ -63,29 +64,23 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         std::getline(ss, field, ',');
         entry.valid = std::stoi(field);
         expData.push_back(entry);
+        if (IDtoEXP.count(entry.parcode)) {
+            IDtoEXP.at(entry.parcode).push_back(entry);
+        } else {
+            IDtoEXP.insert({entry.parcode, {}});
+        }
     }
     expFile.close();
 
     for (int subjectID : subjectIDs) {
         data.insert({subjectID, {}});
-        std::set<int> trialIDs;
-        for (EXPEntry e : expData) {
-            if (e.parcode == subjectID) {
-                trialIDs.insert(e.trial);
-            }
-        }
-        std::vector<int> dataTrial;
-        for (int trialID : trialIDs) {
-            for (EXPEntry e : expData) {
-                if (e.trial == trialID && e.parcode == subjectID) {
-                    data.at(subjectID).push_back(
-                        aDDMTrial(e.rt, e.choice, e.item_left, e.item_right)
-                    );
-                }   
-            }
+        for (EXPEntry e : IDtoEXP.at(subjectID)) {
+            data.at(subjectID).push_back(
+                aDDMTrial(e.rt, e.choice, e.item_left, e.item_right));
         }
     }
-
+    
+    std::map<int, std::vector<FIXEntry>> IDtoFIX;
     std::ifstream fixFile(fixDataFilename);
     std::vector<FIXEntry> fixData;
     subjectIDs.clear();
@@ -105,6 +100,11 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         std::getline(ss, field, ',');
         entry.fix_time = std::stoi(field);
         fixData.push_back(entry);
+        if (IDtoFIX.count(entry.parcode)) {
+            IDtoFIX.at(entry.parcode).push_back(entry);
+        } else {
+            IDtoFIX.insert({entry.parcode, {}});
+        }
     }
     fixFile.close();
 
@@ -114,7 +114,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         }
         std::set<int> trialIDs;
         std::vector<FIXEntry> subjectEntries;
-        for (FIXEntry f : fixData) {
+        for (FIXEntry f : IDtoFIX.at(subjectID)) {
             if (f.parcode == subjectID) {
                 trialIDs.insert(f.trial);
                 subjectEntries.push_back(f);
@@ -124,7 +124,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         for (int trialID : trialIDs) {
             std::vector<int> fixItem;
             std::vector<int> fixTime;
-            for (FIXEntry fs : subjectEntries) {
+            for (FIXEntry fs : IDtoFIX.at(subjectID)) {
                 if (fs.trial == trialID) {
                     fixItem.push_back(fs.fix_item);
                     fixTime.push_back(fs.fix_time);
