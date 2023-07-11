@@ -8,7 +8,7 @@
 #include "util.h"
 
 float d = 0.005;
-float sigma = 0.08;
+float sigma = 0.07;
 int barrier = 1;
 int valueLeft = 3; 
 

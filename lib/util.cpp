@@ -74,12 +74,27 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 
     for (int subjectID : subjectIDs) {
         data.insert({subjectID, {}});
-        for (EXPEntry e : IDtoEXP.at(subjectID)) {
-            data.at(subjectID).push_back(
-                aDDMTrial(e.rt, e.choice, e.item_left, e.item_right));
+        std::set<int> trialIDs;
+        for (EXPEntry e : expData) {
+            if (e.parcode == subjectID) {
+                trialIDs.insert(e.trial);
+            }
+        }
+        std::vector<int> dataTrial;
+        for (int trialID : trialIDs) {
+            for (EXPEntry e : expData) {
+                if (e.trial == trialID && e.parcode == subjectID) {
+                    data.at(subjectID).push_back(
+                        aDDMTrial(e.rt, e.choice, e.item_left, e.item_right)
+                    );
+                }   
+            }
         }
     }
     
+    
+    std::map<int, std::vector<FIXEntry>> IDtoFIX;
+
     std::map<int, std::vector<FIXEntry>> IDtoFIX;
     std::ifstream fixFile(fixDataFilename);
     std::vector<FIXEntry> fixData;
@@ -100,11 +115,6 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         std::getline(ss, field, ',');
         entry.fix_time = std::stoi(field);
         fixData.push_back(entry);
-        if (IDtoFIX.count(entry.parcode)) {
-            IDtoFIX.at(entry.parcode).push_back(entry);
-        } else {
-            IDtoFIX.insert({entry.parcode, {}});
-        }
     }
     fixFile.close();
 
@@ -114,7 +124,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         }
         std::set<int> trialIDs;
         std::vector<FIXEntry> subjectEntries;
-        for (FIXEntry f : IDtoFIX.at(subjectID)) {
+        for (FIXEntry f : fixData) {
             if (f.parcode == subjectID) {
                 trialIDs.insert(f.trial);
                 subjectEntries.push_back(f);
@@ -124,7 +134,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         for (int trialID : trialIDs) {
             std::vector<int> fixItem;
             std::vector<int> fixTime;
-            for (FIXEntry fs : IDtoFIX.at(subjectID)) {
+            for (FIXEntry fs : subjectEntries) {
                 if (fs.trial == trialID) {
                     fixItem.push_back(fs.fix_item);
                     fixTime.push_back(fs.fix_time);

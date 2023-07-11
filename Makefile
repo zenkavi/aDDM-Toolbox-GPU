@@ -11,8 +11,8 @@ main:
 	$(CXX) src/main.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/main
 
 sim:
-	$(CXX) src/simulate_addm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_sim
-	$(CXX) src/simulate_ddm.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_sim
+	$(CXX) src/ddm_simulate.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_sim
+	$(CXX) src/addm_simulate.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_sim
 
 nll:
 	$(CXX) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll

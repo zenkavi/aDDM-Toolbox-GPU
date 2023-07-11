@@ -13,6 +13,23 @@
 #include "util.h"
 #include "addm.h"
 
+template <class T> 
+void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
+    std::cout << name << std::endl;
+    for (auto row : mat) {
+        for (auto f : row) {
+            std::cout << f;
+            if (f >= 0 && f < 10) {
+                std::cout << "  ";
+            } else {
+                std::cout << " ";
+            }
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "------" << std::endl;    
+}
+
 
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
     std::vector<int> transitions, fixDists fixations, std::string fixDistType) {
@@ -45,7 +62,115 @@ aDDM::aDDM(float d, float sigma, float theta, float barrier,
         this->theta = theta;
 }
 
-double aDDM::getTrialLikelihood(aDDMTrial trial, int timestep, float approxstateStep) {
+double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float approxStateStep) {
+    std::vector<int> correctedFixItem = trial.fixItem;
+    std::vector<int> correctedFixTime = trial.fixTime;
+    if (this->nonDecisionTime > 0) {
+        int remainingNDT = this->nonDecisionTime;
+        assert(trial.fixItem.size() == trial.fixTime.size());
+        for (int i = 0; i < trial.fixItem.size(); i++) {
+            int fItem = trial.fixItem[i];
+            int fTime = trial.fixTime[i];
+            if (remainingNDT > 0) {
+                correctedFixItem.push_back(0);
+                correctedFixTime.push_back(min(remainingNDT, fTime));
+                correctedFixItem.push_back(fItem);
+                correctedFixTime.push_back(max(fTime - remainingNDT, 0));
+            } else {
+                correctedFixItem.push_back(fItem);
+                correctedFixTime.push_back(fTime);
+            }
+        }
+    }
+    
+    int numTimeSteps = 0;
+    for (int fTime : correctedFixTime) {
+        numTimeSteps += fTime / timeStep;
+    }
+    if (numTimeSteps < 1) {
+        throw std::invalid_argument("Trial response time is smaller than time step");
+    }
+    numTimeSteps++;
+
+    std::vector<float> barrierUp(numTimeSteps);
+    std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
+    std::vector<float> barrierDown(numTimeSteps);
+    std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
+    for (int i = 1; i < numTimeSteps; i++) {
+        barrierUp.at(i) = this->barrier / (1 + (DECAY * i));
+        barrierDown.at(i) = -this->barrier / (1 + (DECAY * i));
+    }
+
+    int halfNumStateBins = ceil(this->barrier / approxStateStep); 
+    float stateStep = this->barrier / (halfNumStateBins + 0.5);
+    std::vector<float> states;
+    for (float ss = barrierDown.at(0) + (stateStep / 2); ss <= barrierUp.at(0) - (stateStep / 2); ss += stateStep) {
+        states.push_back(ss);
+    }
+
+    float biasStateVal = MAXFLOAT;
+    int biasState = 0;
+    for (int i = 0; i < states.size(); i++) {
+        float r = abs(states.at(i) - this->bias);
+        if (r < biasStateVal) {
+            biasState = i;
+            biasStateVal = r;
+        }
+    }
+
+    // Initialize an empty probability state grid
+    std::vector<std::vector<double>> prStates; // prStates[state][timeStep]
+    for (int i = 0; i < states.size(); i++) {
+        prStates.push_back({});
+        for (int j = 0; j < numTimeSteps; j++) {
+            prStates.at(i).push_back(0);
+        }
+    }
+
+    // Initialize vectors corresponding to the probability of crossing the 
+    // top or bottom barriers at each timestep. 
+    std::vector<double> probUpCrossing; 
+    std::vector<double> probDownCrossing;
+    for (int i = 0; i < numTimeSteps; i++) {
+        probUpCrossing.push_back(0);
+        probDownCrossing.push_back(0);
+    }
+    prStates.at(biasState).at(0) = 1; 
+
+    // Initialize a change matrix where each value at (i, j) 
+    // indicates the difference between states[i] and states[j] 
+    std::vector<std::vector<float>> changeMatrix(states.size(), std::vector<float>(states.size())); 
+    for (size_t i = 0; i < states.size(); i++) {
+        for (size_t j = 0; j < states.size(); j++) {
+            changeMatrix[i][j] = states[i] - states[j];
+        }
+    }
+    if (debug) {
+        printMatrix<float>(changeMatrix, "CHANGE MATRIX");
+    }
+
+    // Distance from every state to the top barrier at each timestep
+    std::vector<std::vector<float>> changeUp(states.size(), std::vector<float>(numTimeSteps));
+    for (size_t i = 0; i < states.size(); i++) {
+        for (size_t j = 0; j < numTimeSteps; j++) {
+            changeUp[i][j] = barrierUp[j] - states[i];
+        }
+    }
+    if (debug) {
+        printMatrix<float>(changeUp, "CHANGE UP");
+    }
+
+
+    // Distance from every state to the bottom barrier at each timestep
+    std::vector<std::vector<float>> changeDown(states.size(), std::vector<float>(numTimeSteps));
+    for (size_t i = 0; i < states.size(); i++) {
+        for (size_t j = 0; j < numTimeSteps; j++) {
+            changeDown[i][j] = barrierDown[j] - states[i];
+        }
+    }
+    if (debug) {
+        printMatrix<float>(changeDown, "CHANGE DOWN");
+    }
     return 0.0;
 }
 

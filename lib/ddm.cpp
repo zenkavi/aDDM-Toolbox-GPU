@@ -181,14 +181,15 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         for (size_t i = 0; i < states.size(); i++) {
             prTimeSlice[i] = prStates[i][time - 1];
         }
+
         // Compute the dot product between the change matrix and previous timeStep's probabilities
         std::vector<double> prStatesNew(states.size()); 
         for (size_t i = 0; i < states.size(); i++) {
             double row_sum = 0;
             for (size_t j = 0; j < states.size(); j++) {
-                row_sum += probDistChangeMatrix[i][j] * prTimeSlice[j];
+                row_sum += stateStep * probDistChangeMatrix[i][j] * prTimeSlice[j];
             }
-            prStatesNew[i] = stateStep * row_sum; 
+            prStatesNew[i] = row_sum;
         }
         // Check for states that are now out-of-bounds based on decay
         for (int i = 0; i < states.size(); i++) {
@@ -247,8 +248,8 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
             sumCurrent += prob;
         }
         double normFactor = sumIn / sumCurrent;
-        for (double prob : prStatesNew) {
-            prob *= normFactor;
+        for (int i = 0; i < prStatesNew.size(); i++) {
+            prStatesNew[i] *= normFactor;
         }
         tempUpCross *= normFactor;
         tempDownCross *= normFactor;

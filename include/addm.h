@@ -67,11 +67,12 @@ class aDDM: public DDM {
      * @brief Compute the likelihood of the data for a single trial given aDDM Parameters.
      * 
      * @param trial aDDMTrial object.
-     * @param timestep value in milliseconds used for binning the time axis.
+     * @param debug True if state variables should be printed for debugging purposes
+     * @param timeStep value in milliseconds used for binning the time axis.
      * @param approxstateStep used for binning the RDV axis.
      * @return double representing the likelihood for the given trial. 
      */
-    double getTrialLikelihood(aDDMTrial trial, int timestep=10, float approxstateStep=0.1);
+    double getTrialLikelihood(aDDMTrial trial, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
     /**
      * @brief Generate simulated fixations provided item values and empirical fixation data. 

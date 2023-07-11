@@ -8,7 +8,7 @@
 #include "util.h"
 
 std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};
-std::vector<float> rangeSigma = {0.05, 0.06, 0.07, 0.08, 0.09};
+std::vector<float> rangeSigma = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09};
 
 int barrier = 1;
 int valueLeft = 3; 
@@ -43,6 +43,10 @@ int main() {
         }
     }
 
+    std::ofstream fp;
+    fp.open("results/ddm_mle.csv");
+    fp << "d,sigma,NLL\n";
+
     double minNLL = __DBL_MAX__;
     double minD = 0; 
     double minSigma = 0; 
@@ -60,7 +64,10 @@ int main() {
             minD = ddm.d;
             minSigma = ddm.sigma;
         }
+        fp << ddm.d << "," << ddm.sigma << "," << NLL << "\n";
     }
+    fp.close(); 
+
     std::cout << 
     "  Optimal Parameters  \n" << 
     "======================\n" <<
