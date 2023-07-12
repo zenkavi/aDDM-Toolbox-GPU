@@ -49,13 +49,14 @@ def main():
     fig.set_figwidth(18)
     fig.set_figheight(15)
 
-    currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
-    if addm:
-        plt.suptitle("aDDM Reaction Time Distribution for Value Differences")   
-        plt.savefig("imgs/addm_rt_dist_" + currTime + ".png")
-    else:
-        plt.suptitle("DDM Reaction Time Distribution for Value Differences")  
-        plt.savefig("imgs/ddm_rt_dist_" + currTime + ".png")
+    if (len(sys.argv) > 1 and "save" in sys.argv):
+        currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
+        if addm:
+            plt.suptitle("aDDM Reaction Time Distribution for Value Differences")   
+            plt.savefig("imgs/addm_rt_dist_" + currTime + ".png")
+        else:
+            plt.suptitle("DDM Reaction Time Distribution for Value Differences")  
+            plt.savefig("imgs/ddm_rt_dist_" + currTime + ".png")
 
    
 if __name__=="__main__":

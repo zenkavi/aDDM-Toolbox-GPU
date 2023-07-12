@@ -50,7 +50,6 @@ int main() {
     double minNLL = __DBL_MAX__;
     double minD = 0; 
     double minSigma = 0; 
-    std::cout << "log " << log(0) << std::endl;
     for (DDM ddm : ddms) {
         std::cout << "Testing combination d=" << ddm.d << " sigma=" << ddm.sigma << std::endl;
         double NLL = 0;

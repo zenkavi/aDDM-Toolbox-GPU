@@ -20,6 +20,7 @@ nll:
 
 mle: 
 	$(CXX) src/ddm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_mle
+	$(CXX) src/addm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_mle
 
 all: sim main nll mle
 	

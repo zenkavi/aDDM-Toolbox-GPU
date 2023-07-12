@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import sys
 
 def main():
     data = pd.read_csv("results/ddm_mle.csv")
@@ -35,8 +36,9 @@ def main():
     ax.set_ylabel('sigma')
     ax.set_title('NLL Heatmap')
 
-    currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
-    plt.savefig("imgs/ddm_mle_" + currTime + ".png")
+    if (len(sys.argv) > 1 and "save" in sys.argv):
+        currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
+        plt.savefig("imgs/ddm_mle_" + currTime + ".png")
 
     plt.show()
 

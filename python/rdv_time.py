@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+from datetime import datetime
+import sys
 
 def main():
     with open('results/data.json') as file:
@@ -21,6 +23,10 @@ def main():
 
     plt.xlabel("Time (ms)")
     plt.ylabel("RDV")
+
+    if (len(sys.argv) > 1 and "save" in sys.argv):
+        currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
+        plt.savefig("imgs/rdv_time_" + currTime + ".png")
     
     plt.show()
 

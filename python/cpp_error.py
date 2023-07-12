@@ -30,8 +30,9 @@ def main():
     plt.xlabel("cpp values")
     plt.ylabel("python values")
 
-    currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
-    plt.savefig("imgs/py_cpp_error_" + currTime + ".png")
+    if (len(sys.argv) > 1 and "save" in sys.argv):
+        currTime = datetime.now().strftime(u"%Y-%m-%d_%H:%M:%S")
+        plt.savefig("imgs/py_cpp_error_" + currTime + ".png")
 
 if __name__=="__main__":
     main()
