@@ -53,5 +53,6 @@ int main() {
         fp << dt.choice << "," << dt.RT << "," << prob << "\n";
         NLL += -log(prob);
     }
+    fp.close();
     std::cout << "NLL: " << NLL << std::endl;
 }

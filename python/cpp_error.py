@@ -2,11 +2,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import json
+import sys 
 from datetime import datetime
 
 def main():
-    df1 = pd.read_csv("results/ddm_simulations_prob.csv")
-    df2 = pd.read_csv("results/python_ddm_sim_prob.csv")
+    if (len(sys.argv) > 1 and sys.argv[1] == "addm"):
+        df1 = pd.read_csv("results/addm_simulations_prob.csv")
+        df2 = pd.read_csv("results/python_addm_sim_prob.csv")
+    else:
+        df1 = pd.read_csv("results/ddm_simulations_prob.csv")
+        df2 = pd.read_csv("results/python_ddm_sim_prob.csv")
     cpp_error = list()
     py_error = list()
     for i, row in df1.iterrows():

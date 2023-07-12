@@ -3,6 +3,7 @@
 #include <random>
 #include <ctime>
 #include <fstream>
+#include <cassert>
 #include "addm.h"
 #include "ddm.h"
 #include "util.h"
@@ -15,15 +16,8 @@ float barrier = 1.0;
 
 std::vector<int> valDiffs = {-3, -2, -1, 0, 1, 2, 3};
 
-struct trialOutput {
-    int choice;
-    int RT;
-    int valDiff;
-};
-
 int main() {
-
-    std::vector<trialOutput> outputs;
+    std::vector<aDDMTrial> outputs;
 
     srand(time(NULL));
 
@@ -45,21 +39,22 @@ int main() {
         int valueLeft = 3;
         int valueRight = valueLeft - valDiff;
         aDDMTrial adt = addm.simulateTrial(valueLeft, valueRight, fixationData);
-
-        trialOutput t; 
-        t.choice = adt.choice;
-        t.RT = adt.RT;
-        t.valDiff = valDiff;
-
-        outputs.push_back(t);
+        outputs.push_back(adt);
     }
 
     std::cout << "printing outputs..." << std::endl;
     std::ofstream fp;
     fp.open("results/addm_simulations.csv");
-    fp << "choice,RT,valDiff\n";
-    for (trialOutput t : outputs) {
-        fp << t.choice << "," << t.RT << "," << t.valDiff << "\n";
+    fp << "ID,choice,RT,valDiff,fixItem,fixTime\n";
+    int id = 0; 
+    for (aDDMTrial adt : outputs) {
+        assert(adt.fixItem.size() == adt.fixTime.size());
+        for (int i = 0; i < adt.fixItem.size(); i++) {
+            fp << id << "," << adt.choice << "," << adt.RT << "," << 
+                adt.valueLeft - adt.valueRight << "," << 
+                adt.fixItem[i] << "," << adt.fixTime[i] << "\n";
+        }
+        id++;
     }
     fp.close();
 

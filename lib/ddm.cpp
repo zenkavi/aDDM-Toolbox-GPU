@@ -164,7 +164,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
             std::cout << "mean: " << mean << std::endl;
         }
         
-        // Compute the likelihood of each change in the matrix using a probability density functions with parameters mean and sigma. 
+        // Compute the likelihood of each change in the matrix using a probability density function with parameters mean and sigma. 
         std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size())); 
         for (size_t i = 0; i < states.size(); i++) {
             for (size_t j = 0; j < states.size(); j++) {

@@ -92,10 +92,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         }
     }
     
-    
-    std::map<int, std::vector<FIXEntry>> IDtoFIX;
 
-    std::map<int, std::vector<FIXEntry>> IDtoFIX;
     std::ifstream fixFile(fixDataFilename);
     std::vector<FIXEntry> fixData;
     subjectIDs.clear();
@@ -304,6 +301,8 @@ void aDDMexportData(aDDM addm, aDDMTrial adt) {
     j["vl"] = adt.valueLeft;
     j["vr"] = adt.valueRight;
     j["RDVs"] = adt.RDVs;
+    j["fixItem"] = adt.fixItem;
+    j["fixTime"] = adt.fixTime;
     j["timeStep"] = adt.timeStep;
     o << std::setw(4) << j << std::endl;        
 }

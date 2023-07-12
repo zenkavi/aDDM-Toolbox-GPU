@@ -39,6 +39,8 @@ class aDDMTrial: public DDMTrial {
             unsigned int RT, int choice, int valueLeft, int valueRight, 
             vector<int> fixItem={}, vector<int> fixTime={}, 
             vector<float> fixRDV={}, float uninterruptedLastFixTime=0);
+
+        aDDMTrial() {};
 };
 
 class aDDM: public DDM {

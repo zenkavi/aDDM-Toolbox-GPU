@@ -16,6 +16,7 @@ sim:
 
 nll:
 	$(CXX) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll
+	$(CXX) src/addm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_nll
 
 mle: 
 	$(CXX) src/ddm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_mle
