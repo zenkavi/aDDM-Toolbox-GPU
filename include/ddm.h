@@ -15,7 +15,7 @@ class DDMTrial {
 
         DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight);
 
-        DDMTrial() {}
+        DDMTrial() {};
 };
 
 class DDM {
@@ -35,5 +35,9 @@ class DDM {
 
         DDMTrial simulateTrial(int ValueLeft, int ValueRight, int timeStep=10);
 };
+
+double DDMParallelLikelihood(DDM ddm, DDMTrial trial);
+
+double DDMparallelNLL(DDM ddm, std::vector<DDMTrial> trials);
 
 #endif 

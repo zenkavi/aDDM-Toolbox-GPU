@@ -13,23 +13,6 @@
 #include "util.h"
 #include "addm.h"
 
-template <class T> 
-void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
-    std::cout << name << std::endl;
-    for (auto row : mat) {
-        for (auto f : row) {
-            std::cout << f;
-            if (f >= 0 && f < 10) {
-                std::cout << "  ";
-            } else {
-                std::cout << " ";
-            }
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "------" << std::endl;    
-}
-
 
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
     std::vector<int> transitions, fixDists fixations, std::string fixDistType) {

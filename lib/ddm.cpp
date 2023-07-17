@@ -9,22 +9,6 @@
 #include "util.h"
 #include "ddm.h"
 
-template <class T> 
-void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
-    std::cout << name << std::endl;
-    for (auto row : mat) {
-        for (auto f : row) {
-            std::cout << f;
-            if (f >= 0 && f < 10) {
-                std::cout << "  ";
-            } else {
-                std::cout << " ";
-            }
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "------" << std::endl;    
-}
 
 DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
@@ -313,4 +297,30 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     trial.RDVs = RDVs;
     trial.timeStep = timeStep;
     return trial;
+}
+
+double DDMParallelLikelihood(DDM ddm, DDMTrial trial) {
+    return ddm.getTrialLikelihood(trial);
+}
+
+double DDMparallelNLL(DDM ddm, std::vector<DDMTrial> trials) {
+    double NLL = 0;
+    BS::thread_pool pool;
+    BS::multi_future<double> futs = pool.parallelize_loop(
+        0, trials.size(), 
+        [&ddm, &trials](const int a, const int b) {
+            double block_total = 0; 
+            for (int i = a; i < b; ++i) {
+                block_total += -log(
+                    DDMParallelLikelihood(ddm, trials[i])
+                );
+            }
+            return block_total;
+        }
+    );
+    std::vector<double> totals = futs.get();
+    for (const double t : totals) {
+        NLL += t; 
+    }
+    return NLL;
 }

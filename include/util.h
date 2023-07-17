@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include "addm.h"
+#include "bshoshany/BS_thread_pool.hpp"
 
 extern float SEED;
 extern float DECAY;
@@ -50,5 +51,22 @@ FixationData getEmpiricalDistributions(
 void DDMexportData(DDM ddm, DDMTrial dt);
 
 void aDDMexportData(aDDM addm, aDDMTrial adt);
+
+template <class T> 
+void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
+    std::cout << name << std::endl;
+    for (auto row : mat) {
+        for (auto f : row) {
+            std::cout << f;
+            if (f >= 0 && f < 10) {
+                std::cout << "  ";
+            } else {
+                std::cout << " ";
+            }
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "------" << std::endl;    
+}
 
 #endif
