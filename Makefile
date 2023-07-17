@@ -1,6 +1,6 @@
 CXX := g++
 CXXLIBS := lib/ddm.cpp lib/addm.cpp lib/util.cpp
-CXXFLAGS := -O3
+CXXFLAGS := -Ofast -msse4.2 -march=native
 LIB := -L lib -lpthread
 INC := -I include
 
@@ -16,10 +16,13 @@ nll:
 	$(CXX) $(CXXFLAGS) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll
 	$(CXX) $(CXXFLAGS) src/addm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_nll
 	$(CXX) $(CXXFLAGS) src/ddm_nll_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll_thread
+	$(CXX) $(CXXFLAGS) src/addm_nll_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_nll_thread
 
 mle: 
 	$(CXX) $(CXXFLAGS) src/ddm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_mle
 	$(CXX) $(CXXFLAGS) src/addm_mle.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_mle
+	$(CXX) $(CXXFLAGS) src/ddm_mle_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_mle_thread
+	$(CXX) $(CXXFLAGS) src/addm_mle_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_mle_thread
 
 tests:
 	$(CXX) $(CXXFLAGS) src/test.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/test

@@ -94,5 +94,6 @@ class aDDM: public DDM {
     );
 };
 
+double aDDMParallelNLL(aDDM addm, std::vector<aDDMTrial> trials);
 
 #endif 

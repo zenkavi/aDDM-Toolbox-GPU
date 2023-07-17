@@ -492,3 +492,25 @@ aDDMTrial aDDM::simulateTrial(
     trial.timeStep = timeStep;
     return trial;
 }
+
+double aDDMParallelNLL(aDDM addm, std::vector<aDDMTrial> trials) {
+    double NLL = 0; 
+    BS::thread_pool pool;
+    BS::multi_future<double> futs = pool.parallelize_loop(
+        0, trials.size(), 
+        [&addm, &trials](const int a, const int b) {
+            double block_total = 0; 
+            for (int i = a; i < b; ++i) {
+                block_total += -log(
+                    addm.getTrialLikelihood(trials[i])
+                );
+            }
+            return block_total;
+        }
+    );
+    std::vector<double> totals = futs.get();
+    for (const double t : totals) {
+        NLL += t; 
+    }
+    return NLL;
+}

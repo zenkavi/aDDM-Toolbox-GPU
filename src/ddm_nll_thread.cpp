@@ -42,7 +42,7 @@ int main() {
     DDM ddm = DDM(d, sigma, barrier);
 
     auto start = high_resolution_clock::now(); 
-    double NLL = DDMparallelNLL(ddm, trials);
+    double NLL = DDMParallelNLL(ddm, trials);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 

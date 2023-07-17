@@ -171,13 +171,6 @@ FixationData getEmpiricalDistributions(
     std::vector<int> latencies;
     std::vector<int> transitions;
     std::map<int, std::vector<float>> fixations;
-    for (int fn = 1; fn < numFixDists + 1; fn++) {
-        if (fixDistType == "simple") {
-            // fixations.at(fn) = {};
-        } else {
-            throw std::invalid_argument("simple is not implemented");
-        }
-    }
 
     if (subjectIDs.empty()) {
         for (auto i : data) {

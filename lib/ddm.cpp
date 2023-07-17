@@ -214,7 +214,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         for (int i = 0; i < currChangeDown.size(); i++) {
             float x = currChangeDown[i];
             changeDownCDFs.push_back(
-                cumulativeDensityFunction(mean, this->sigma, x)
+                cumulativeDensityFunction(0, 1, (x - mean) / this->sigma)
             );
         }
         assert(changeDownCDFs.size() == prTimeSlice.size());
@@ -299,11 +299,7 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     return trial;
 }
 
-double DDMParallelLikelihood(DDM ddm, DDMTrial trial) {
-    return ddm.getTrialLikelihood(trial);
-}
-
-double DDMparallelNLL(DDM ddm, std::vector<DDMTrial> trials) {
+double DDMParallelNLL(DDM ddm, std::vector<DDMTrial> trials) {
     double NLL = 0;
     BS::thread_pool pool;
     BS::multi_future<double> futs = pool.parallelize_loop(
@@ -312,7 +308,7 @@ double DDMparallelNLL(DDM ddm, std::vector<DDMTrial> trials) {
             double block_total = 0; 
             for (int i = a; i < b; ++i) {
                 block_total += -log(
-                    DDMParallelLikelihood(ddm, trials[i])
+                    ddm.getTrialLikelihood(trials[i])
                 );
             }
             return block_total;
