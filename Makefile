@@ -33,7 +33,7 @@ tests:
 all: sim nll mle tests
 
 gpu: 
-	$(NVCC) $(NVCCFLAGS) src/test3.cu $(CXXLIBS) $(LIB) $(INC) -o test
+	$(NVCC) $(NVCCFLAGS) src/test.cu $(CXXLIBS) $(LIB) $(INC) -o test
 	
 clean: 
 	rm -rf bin/*

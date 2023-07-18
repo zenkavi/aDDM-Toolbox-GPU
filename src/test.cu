@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <sstream>
+#include <iomanip>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/sequence.h>
@@ -12,7 +13,7 @@
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/extrema.h>
 #include <thrust/reduce.h>
-#include <iomanip>
+#include <thrust/inner_product.h>
 #include "../include/ddm.h"
 #include "../include/util.h"
 
@@ -29,7 +30,7 @@ float approxStateStep = 0.1;
 
 struct abs_diff_functor
 {
-    float bias;
+    const float bias;
 
     __host__ __device__
     float operator()(const float& x) const
@@ -38,16 +39,19 @@ struct abs_diff_functor
     }
 };
 
-struct DotProductFunctor {
-    float stateStep;
+struct cdf_functor
+{
+    float a;
+    float b; 
+    float m; 
+    float s;
 
-    DotProductFunctor(float _stateStep) : stateStep(_stateStep) {}
+    cdf_functor(float _a, float _b, float _m, float _s) : a(_a), b(_b), m(_m), s(_s) {}
 
-    __host__ __device__
-    float operator()(const thrust::tuple<float, float>& t) const {
-        float probDistValue = thrust::get<0>(t);
-        float prevTimeSliceValue = thrust::get<1>(t);
-        return probDistValue * prevTimeSliceValue * stateStep;
+    __host__ __device__ 
+    float operator()(const float& x) const 
+    {
+        return a + b * normcdf((x - m) / s);
     }
 };
 
@@ -230,7 +234,7 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
             prStates.begin() + (time - 1) * numTimeSteps, 
             prStates.begin() + (time) * numTimeSteps, 
             prevTimeSlice.begin()
-            );
+        );
 
         std::cout << "PREV TIME SLICE" << std::endl; 
         for (double f : prevTimeSlice) { 
@@ -241,18 +245,70 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
 
         thrust::device_vector<double> prStatesNew(numStates);
 
-        computePrStatesNew<<<gridSize, blockSize>>>(thrust::raw_pointer_cast(probDistChangeMatrix.data()), thrust::raw_pointer_cast(prevTimeSlice.data()), thrust::raw_pointer_cast(prStatesNew.data()), numStates, stateStep);
+        computePrStatesNew<<<gridSize, blockSize>>>(
+            thrust::raw_pointer_cast(probDistChangeMatrix.data()), 
+            thrust::raw_pointer_cast(prevTimeSlice.data()), 
+            thrust::raw_pointer_cast(prStatesNew.data()), 
+            numStates, stateStep
+        );
         std::cout << "PR STATES NEW" << std::endl; 
         for (double d : prStatesNew) {
             std::cout << d << std::endl; 
         }
+
+        thrust::device_vector<float> currChangeUp(numStates); 
+        thrust::transform(
+            changeUp.begin() + (time) * numTimeSteps, 
+            changeUp.begin() + (time + 1) * numTimeSteps, 
+            currChangeUp.begin(), 
+            cdf_functor(1, -1, mean, ddm.sigma)
+        );
+        std::cout << "CURR CHANGE UP" << std::endl; 
+        for (float f : currChangeUp) {
+            std::cout << f << std::endl; 
+        }
+        double tempUpCross = thrust::inner_product(currChangeUp.begin(), currChangeUp.end(), prevTimeSlice.begin(), 0);
+        std::cout << "temp up cross " << tempUpCross << std::endl; 
+
+        thrust::device_vector<float> currChangeDown(numStates);
+        thrust::transform(
+            changeDown.begin() + (time) * numTimeSteps, 
+            changeDown.begin() + (time + 1) * numTimeSteps, 
+            currChangeDown.begin(),
+            cdf_functor(0, 1, mean, ddm.sigma)
+        );
+        std::cout << "CURR CHANGE DOWN" << std::endl; 
+        for (float f : currChangeDown) { 
+            std::cout << f << std::endl; 
+        }
+        double tempDownCross = thrust::inner_product(currChangeDown.begin(), currChangeDown.end(), prevTimeSlice.begin(), 0);
+
+        double sumIn = thrust::reduce(prevTimeSlice.begin(), prevTimeSlice.end(), 0, thrust::plus<double>());
+        double sumCurrent = thrust::reduce(
+            prStatesNew.begin(), prStatesNew.end(), 0, thrust::plus<double>()
+            ) + tempUpCross + tempDownCross;
+        double normFactor = sumIn / sumCurrent; 
+        tempUpCross *= normFactor; 
+        tempDownCross *= normFactor; 
+
+        thrust::transform(prStatesNew.begin(), prStatesNew.end(), prStatesNew.begin(), thrust::placeholders::_1 * normFactor);
+        thrust::copy(prStatesNew.begin(), prStatesNew.end(), prStates.begin() + (time) * numTimeSteps);
         
-
-
-        break;
+        probUpCrossing[time] = tempUpCross;
+        probDownCrossing[time] = tempDownCross;
     }
-
-    return 0;
+    double likelihood = 0; 
+    if (trial.choice == -1) {
+        if (probUpCrossing[numTimeSteps - 1] > 0) {
+            likelihood = probUpCrossing[numTimeSteps - 1];
+        }
+    }
+    else if (trial.choice == 1) {
+        if (probDownCrossing[numTimeSteps - 1] > 0) {
+            likelihood = probDownCrossing[numTimeSteps - 1];
+        }
+    }
+    return likelihood;
 }
 
 int main() {

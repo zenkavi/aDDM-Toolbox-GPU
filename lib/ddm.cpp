@@ -200,10 +200,20 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
                 1 - cumulativeDensityFunction(mean, this->sigma, x)
             );
         }
+        if (debug) {
+            std::cout << "CURR CHANGE UP CDFs" << std::endl; 
+            for (float f : changeUpCDFs) {
+                std::cout << f << std::endl;
+            }
+            std::cout << "------" << std::endl;
+        }
         assert(changeUpCDFs.size() == prTimeSlice.size());
         double tempUpCross = 0;
         for (int i = 0; i < prTimeSlice.size(); i++) {
             tempUpCross += changeUpCDFs[i] * prTimeSlice[i];
+        }
+        if (debug) {
+            std::cout << "temp up cross: " << tempUpCross << std::endl; 
         }
 
         std::vector<float> currChangeDown;
