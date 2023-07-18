@@ -4,6 +4,9 @@ CXXFLAGS := -Ofast -msse4.2 -march=native
 LIB := -L lib -lpthread
 INC := -I include
 
+NVCC := /usr/local/cuda-12.2/bin/nvcc
+NVCCFLAGS := -O3
+
 SRC_DIR := lib
 BUILD_DIR := bin 
 OBJ_DIR := obj 
@@ -30,7 +33,7 @@ tests:
 all: sim nll mle tests
 
 gpu: 
-	nvcc -O3 src/test.cu -lcublas $(CXXLIBS) $(LIB) $(INC) -o test
+	$(NVCC) $(NVCCFLAGS) src/test3.cu $(CXXLIBS) $(LIB) $(INC) -o test
 	
 clean: 
 	rm -rf bin/*

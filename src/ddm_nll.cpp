@@ -49,9 +49,10 @@ int main() {
 
     double NLL = 0; 
     for (DDMTrial dt : trials) {
-        double prob = ddm.getTrialLikelihood(dt);
+        double prob = ddm.getTrialLikelihood(dt, true);
         fp << dt.choice << "," << dt.RT << "," << prob << "\n";
         NLL += -log(prob);
+        break; 
     }
     fp.close();
     std::cout << "NLL: " << NLL << std::endl;

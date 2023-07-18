@@ -5,7 +5,10 @@
 #include <map>
 #include <string>
 #include "addm.h"
-#include "bshoshany/BS_thread_pool.hpp"
+
+// #ifndef __NVCC__
+#   include "bshoshany/BS_thread_pool.hpp"
+// #endif
 
 extern float SEED;
 extern float DECAY;
