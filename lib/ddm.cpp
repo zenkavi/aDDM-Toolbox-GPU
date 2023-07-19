@@ -166,6 +166,13 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
             prTimeSlice[i] = prStates[i][time - 1];
         }
 
+        if (debug) {
+            std::cout << "PREV TIME SLICE" << std::endl; 
+            for (double d : prTimeSlice) {
+                std::cout << d << std::endl; 
+            }
+        }
+
         // Compute the dot product between the change matrix and previous timeStep's probabilities
         std::vector<double> prStatesNew(states.size()); 
         for (size_t i = 0; i < states.size(); i++) {
@@ -231,6 +238,9 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         double tempDownCross = 0;
         for (int i = 0; i < prTimeSlice.size(); i++) {
             tempDownCross += changeDownCDFs[i] * prTimeSlice[i];
+        }
+        if (debug) {
+            std::cout << "temp down cross: " << tempDownCross << std::endl; 
         }
 
         double sumIn = 0; 

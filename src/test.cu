@@ -231,8 +231,8 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
 
         thrust::device_vector<double> prevTimeSlice(numStates);
         thrust::copy(
-            prStates.begin() + (time - 1) * numTimeSteps, 
-            prStates.begin() + (time) * numTimeSteps, 
+            prStates.begin() + (time - 1) * numStates, 
+            prStates.begin() + (time) * numStates, 
             prevTimeSlice.begin()
         );
 
@@ -263,11 +263,16 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
             currChangeUp.begin(), 
             cdf_functor(1, -1, mean, ddm.sigma)
         );
-        std::cout << "CURR CHANGE UP" << std::endl; 
+        std::cout << "CURR CHANGE UP (CDF)" << std::endl; 
         for (float f : currChangeUp) {
             std::cout << f << std::endl; 
         }
-        double tempUpCross = thrust::inner_product(currChangeUp.begin(), currChangeUp.end(), prevTimeSlice.begin(), 0);
+
+        double tempUpCross = 0; 
+        for (int i = 0; i < numStates; i++) {
+            tempUpCross += currChangeUp[i] * prevTimeSlice[i];
+        }
+        // double tempUpCross = thrust::inner_product(currChangeUp.begin(), currChangeUp.end(), prevTimeSlice.begin(), 0);
         std::cout << "temp up cross " << tempUpCross << std::endl; 
 
         thrust::device_vector<float> currChangeDown(numStates);
@@ -277,11 +282,17 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
             currChangeDown.begin(),
             cdf_functor(0, 1, mean, ddm.sigma)
         );
-        std::cout << "CURR CHANGE DOWN" << std::endl; 
+        std::cout << "CURR CHANGE DOWN (CDF)" << std::endl; 
         for (float f : currChangeDown) { 
             std::cout << f << std::endl; 
         }
-        double tempDownCross = thrust::inner_product(currChangeDown.begin(), currChangeDown.end(), prevTimeSlice.begin(), 0);
+
+        double tempDownCross = 0; 
+        for (int i = 0; i < numStates; i++) {
+            tempDownCross += currChangeDown[i] * prevTimeSlice[i];
+        }
+        // double tempDownCross = thrust::inner_product(currChangeDown.begin(), currChangeDown.end(), prevTimeSlice.begin(), 0);
+        std::cout << "temp down cross " << tempDownCross << std::endl; 
 
         double sumIn = thrust::reduce(prevTimeSlice.begin(), prevTimeSlice.end(), 0, thrust::plus<double>());
         double sumCurrent = thrust::reduce(
@@ -292,8 +303,20 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial) {
         tempDownCross *= normFactor; 
 
         thrust::transform(prStatesNew.begin(), prStatesNew.end(), prStatesNew.begin(), thrust::placeholders::_1 * normFactor);
-        thrust::copy(prStatesNew.begin(), prStatesNew.end(), prStates.begin() + (time) * numTimeSteps);
+        thrust::copy(prStatesNew.begin(), prStatesNew.end(), prStates.begin() + (time) * numStates);
         
+        std::cout << "UPDATED PRSTATES" << std::endl; 
+        for (int i = 0; i < prStates.size(); i++) {
+            std::cout << prStates[i] << " "; 
+            if ((i + 1) % numStates == 0) { std::cout << std::endl; }
+        }
+
+        for (int i = 0; i < 200; i++) {
+            std::cout << "=";
+        }
+        std::cout << std::endl; 
+
+
         probUpCrossing[time] = tempUpCross;
         probDownCrossing[time] = tempDownCross;
     }
