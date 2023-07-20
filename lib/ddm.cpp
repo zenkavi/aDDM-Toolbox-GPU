@@ -9,6 +9,17 @@
 #include "util.h"
 #include "ddm.h"
 
+#ifdef IGNORE_SPACE_CONSTRAINTS
+    bool restrictSpace = false; 
+#else 
+    bool restrictSpace = true; 
+#endif 
+
+#ifdef USE_GPU
+    bool useGPU = true; 
+#else
+    bool useGPU = false; 
+#endif 
 
 DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
@@ -131,6 +142,10 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
     }
 
     int elapsedNDT = 0;
+    bool recomputePDCM = true; 
+    float prevMean = 0; 
+    std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size()));
+
     for (int time = 1; time < numTimeSteps; time++) {
         if (debug) {
             std::cout << "============" << std::endl;
@@ -147,15 +162,27 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         if (debug) {
             std::cout << "mean: " << mean << std::endl;
         }
+
+        if (mean != prevMean) {
+            recomputePDCM = true; 
+        } else {
+            recomputePDCM = false; 
+        }
         
         // Compute the likelihood of each change in the matrix using a probability density function with parameters mean and sigma. 
-        std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size())); 
-        for (size_t i = 0; i < states.size(); i++) {
-            for (size_t j = 0; j < states.size(); j++) {
-                float x = changeMatrix[i][j];
-                probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
-            }
+        // Only necessary when: 
+        //     -mean of the normal distribution has changed
+        //     -first timestep 
+        //     -restricting space
+        if (recomputePDCM || time == 1 || restrictSpace) {
+            for (size_t i = 0; i < states.size(); i++) {
+                for (size_t j = 0; j < states.size(); j++) {
+                    float x = changeMatrix[i][j];
+                    probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
+                }
+            } 
         }
+        
         if (debug) {
             printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
         }
@@ -252,6 +279,10 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
             sumCurrent += prob;
         }
         double normFactor = sumIn / sumCurrent;
+
+        if (debug) {
+            std::cout << "norm factor " << normFactor << std::endl; 
+        }
         for (int i = 0; i < prStatesNew.size(); i++) {
             prStatesNew[i] *= normFactor;
         }
@@ -262,6 +293,8 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
         probUpCrossing[time] = tempUpCross;
         probDownCrossing[time] = tempDownCross;
+
+        prevMean = mean; 
     }
 
     double likelihood = 0; 

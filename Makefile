@@ -1,3 +1,5 @@
+MACROS := -DIGNORE_SPACE_CONSTRAINTS
+
 CXX := g++
 CXXLIBS := lib/ddm.cpp lib/addm.cpp lib/util.cpp
 CXXFLAGS := -Ofast -msse4.2 -march=native
@@ -16,9 +18,9 @@ sim:
 	$(CXX) $(CXXFLAGS) src/addm_simulate.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_sim
 
 nll:
-	$(CXX) $(CXXFLAGS) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll
+	$(CXX) $(CXXFLAGS) src/ddm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll $(MACROS)
 	$(CXX) $(CXXFLAGS) src/addm_nll.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_nll
-	$(CXX) $(CXXFLAGS) src/ddm_nll_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll_thread
+	$(CXX) $(CXXFLAGS) src/ddm_nll_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/ddm_nll_thread $(MACROS)
 	$(CXX) $(CXXFLAGS) src/addm_nll_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o bin/addm_nll_thread
 
 mle: 
@@ -33,7 +35,7 @@ tests:
 all: sim nll mle tests
 
 gpu: 
-	$(NVCC) $(NVCCFLAGS) src/test.cu $(CXXLIBS) $(LIB) $(INC) -o test
+	$(NVCC) $(NVCCFLAGS) src/test2.cu $(CXXLIBS) $(LIB) $(INC) -o test
 	
 clean: 
 	rm -rf bin/*

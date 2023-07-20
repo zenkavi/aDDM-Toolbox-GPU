@@ -4,6 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 #include "ddm.h"
 #include "util.h"
 
@@ -17,6 +18,8 @@ struct params {
     double d; 
     double sigma; 
 };
+
+using namespace std::chrono;
 
 int main() {
     std::vector<DDMTrial> trials; 
@@ -47,13 +50,17 @@ int main() {
     fp.open("results/ddm_simulations_prob.csv");
     fp << "choice,RT,p\n";
 
+    auto start = high_resolution_clock::now();
     double NLL = 0; 
     for (DDMTrial dt : trials) {
-        double prob = ddm.getTrialLikelihood(dt, true);
+        double prob = ddm.getTrialLikelihood(dt);
         fp << dt.choice << "," << dt.RT << "," << prob << "\n";
         NLL += -log(prob);
-        break; 
     }
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+
     fp.close();
     std::cout << "NLL: " << NLL << std::endl;
+    std::cout << "time: " << duration.count() << " ms" << std::endl; 
 }

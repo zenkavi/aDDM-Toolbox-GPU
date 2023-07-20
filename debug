@@ -187,6 +187,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 2
 ============
@@ -283,6 +285,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 3
 ============
@@ -379,6 +383,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 4
 ============
@@ -475,6 +481,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 5
 ============
@@ -571,6 +579,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 6
 ============
@@ -667,6 +677,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 7
 ============
@@ -763,6 +775,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000000
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 8
 ============
@@ -859,6 +873,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000001
+temp down cross: 0.000000
+norm factor 0.999956
 ============
 TIMESTEP 9
 ============
@@ -955,6 +971,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000002
+temp down cross: 0.000000
+norm factor 0.999955
 ============
 TIMESTEP 10
 ============
@@ -1051,6 +1069,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000007
+temp down cross: 0.000001
+norm factor 0.999954
 ============
 TIMESTEP 11
 ============
@@ -1147,6 +1167,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000017
+temp down cross: 0.000002
+norm factor 0.999953
 ============
 TIMESTEP 12
 ============
@@ -1243,6 +1265,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000036
+temp down cross: 0.000004
+norm factor 0.999949
 ============
 TIMESTEP 13
 ============
@@ -1339,6 +1363,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000066
+temp down cross: 0.000008
+norm factor 0.999945
 ============
 TIMESTEP 14
 ============
@@ -1435,6 +1461,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000110
+temp down cross: 0.000013
+norm factor 0.999938
 ============
 TIMESTEP 15
 ============
@@ -1531,6 +1559,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000170
+temp down cross: 0.000020
+norm factor 0.999930
 ============
 TIMESTEP 16
 ============
@@ -1627,6 +1657,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000247
+temp down cross: 0.000030
+norm factor 0.999919
 ============
 TIMESTEP 17
 ============
@@ -1723,6 +1755,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000341
+temp down cross: 0.000041
+norm factor 0.999906
 ============
 TIMESTEP 18
 ============
@@ -1819,6 +1853,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000453
+temp down cross: 0.000054
+norm factor 0.999892
 ============
 TIMESTEP 19
 ============
@@ -1915,6 +1951,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000581
+temp down cross: 0.000070
+norm factor 0.999875
 ============
 TIMESTEP 20
 ============
@@ -2011,6 +2049,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000723
+temp down cross: 0.000087
+norm factor 0.999857
 ============
 TIMESTEP 21
 ============
@@ -2107,6 +2147,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.000878
+temp down cross: 0.000105
+norm factor 0.999837
 ============
 TIMESTEP 22
 ============
@@ -2203,6 +2245,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001044
+temp down cross: 0.000125
+norm factor 0.999816
 ============
 TIMESTEP 23
 ============
@@ -2299,6 +2343,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001219
+temp down cross: 0.000146
+norm factor 0.999794
 ============
 TIMESTEP 24
 ============
@@ -2395,6 +2441,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001400
+temp down cross: 0.000168
+norm factor 0.999771
 ============
 TIMESTEP 25
 ============
@@ -2491,6 +2539,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001587
+temp down cross: 0.000190
+norm factor 0.999747
 ============
 TIMESTEP 26
 ============
@@ -2587,6 +2637,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001776
+temp down cross: 0.000213
+norm factor 0.999724
 ============
 TIMESTEP 27
 ============
@@ -2683,6 +2735,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.001967
+temp down cross: 0.000236
+norm factor 0.999700
 ============
 TIMESTEP 28
 ============
@@ -2779,6 +2833,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.002158
+temp down cross: 0.000259
+norm factor 0.999676
 ============
 TIMESTEP 29
 ============
@@ -2875,6 +2931,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.002348
+temp down cross: 0.000282
+norm factor 0.999652
 ============
 TIMESTEP 30
 ============
@@ -2971,6 +3029,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.002534
+temp down cross: 0.000304
+norm factor 0.999628
 ============
 TIMESTEP 31
 ============
@@ -3067,6 +3127,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.002718
+temp down cross: 0.000326
+norm factor 0.999605
 ============
 TIMESTEP 32
 ============
@@ -3163,6 +3225,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.002897
+temp down cross: 0.000347
+norm factor 0.999582
 ============
 TIMESTEP 33
 ============
@@ -3259,6 +3323,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003070
+temp down cross: 0.000368
+norm factor 0.999560
 ============
 TIMESTEP 34
 ============
@@ -3355,6 +3421,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003238
+temp down cross: 0.000388
+norm factor 0.999538
 ============
 TIMESTEP 35
 ============
@@ -3451,6 +3519,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003400
+temp down cross: 0.000408
+norm factor 0.999516
 ============
 TIMESTEP 36
 ============
@@ -3547,6 +3617,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003556
+temp down cross: 0.000426
+norm factor 0.999495
 ============
 TIMESTEP 37
 ============
@@ -3643,6 +3715,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003704
+temp down cross: 0.000444
+norm factor 0.999475
 ============
 TIMESTEP 38
 ============
@@ -3739,6 +3813,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003846
+temp down cross: 0.000461
+norm factor 0.999456
 ============
 TIMESTEP 39
 ============
@@ -3835,6 +3911,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.003981
+temp down cross: 0.000477
+norm factor 0.999437
 ============
 TIMESTEP 40
 ============
@@ -3931,6 +4009,8 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.004109
+temp down cross: 0.000493
+norm factor 0.999418
 ============
 TIMESTEP 41
 ============
@@ -4027,4 +4107,6 @@ CURR CHANGE UP CDFs
 0.271314
 ------
 temp up cross: 0.004230
+temp down cross: 0.000507
+norm factor 0.999401
 NLL: 7.587196
