@@ -222,7 +222,7 @@ FixationData getEmpiricalDistributions(
             int latency = 0;
             bool firstItemFixReached = false;
             int fixNumber = 1;
-            for (int i = 0; i < trial.fixItem.size() - excludeCount; i++) {
+            for (ulong i = 0; i < trial.fixItem.size() - excludeCount; i++) {
                 if (trial.fixItem.at(i) != 1 && trial.fixItem.at(i) != 2) {
                     if (!firstItemFixReached) {
                         latency += trial.fixTime.at(i);

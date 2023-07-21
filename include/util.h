@@ -7,7 +7,7 @@
 #include "addm.h"
 
 // #ifndef __NVCC__
-#   include "bshoshany/BS_thread_pool.hpp"
+#include "bshoshany/BS_thread_pool.hpp"
 // #endif
 
 extern float SEED;

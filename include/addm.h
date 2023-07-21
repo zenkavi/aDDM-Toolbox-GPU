@@ -49,15 +49,15 @@ class aDDM: public DDM {
         float theta;
 
     /**
-     * \brief Construct a new aDDM object.
+     * @brief Construct a new aDDM object.
      * 
-     * \param d drift rate.
-     * \param sigma noise or standard deviation for the normal distribution.
-     * \param theta ranges on [0,1] and indicates level of attentional bias.
-     * \param barrier positive magnitude of the signal thresholds. 
-     * \param nonDecisionTime amount of time in milliseconds in which only noise 
+     * @param d Drift rate.
+     * @param sigma Noise or standard deviation for the normal distribution.
+     * @param theta Ranges on [0,1] and indicates level of attentional bias.
+     * @param barrier Positive magnitude of the signal thresholds. 
+     * @param nonDecisionTime Amount of time in milliseconds in which only noise 
      * is added to the decision variable. 
-     * \param bias corresponds to the initial value of the decision variable. Must 
+     * @param bias Corresponds to the initial value of the decision variable. Must 
      * be smaller than barrier. 
      */
     aDDM(
@@ -94,6 +94,15 @@ class aDDM: public DDM {
     );
 };
 
+/**
+ * @brief Compute the Negative Log Likelihood (NLL) for a given vector of aDDMTrials using
+ * multithreading. Once all trial likelihoods are computed, return the total NLL for the dataset. 
+ * 
+ * @param addm aDDM object that calls getTrialLikelihood on each trial in the input dataset. 
+ * @param trials Vector of trials to compute the total NLL for. Each trial's likelihood is computed in 
+ * parallel blocks. 
+ * @return double representing the total NLL for the entire dataset. 
+ */
 double aDDMParallelNLL(aDDM addm, std::vector<aDDMTrial> trials);
 
 #endif 

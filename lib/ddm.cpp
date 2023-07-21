@@ -26,6 +26,7 @@ DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->choice = choice;
     this->valueLeft = valueLeft;
     this->valueRight = valueRight;
+    this->likelihood = 0; 
 }
 
 DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, float bias) {
@@ -39,7 +40,7 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
     this->sigma = sigma; 
     this->barrier = barrier; 
     this->nonDecisionTime = nonDecisionTime;
-    this->bias = bias;            
+    this->bias = bias;    
 }
 
 double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float approxStateStep) {

@@ -1,6 +1,6 @@
 MACROS := -DIGNORE_SPACE_CONSTRAINTS
 
-CXX := g++
+CXX := g++ -Wall
 CXXLIBS := lib/ddm.cpp lib/addm.cpp lib/util.cpp
 CXXFLAGS := -Ofast -msse4.2 -march=native
 LIB := -L lib -lpthread

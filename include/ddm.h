@@ -12,6 +12,7 @@ class DDMTrial {
         int valueRight;
         std::vector<float>RDVs;
         int timeStep;
+        double likelihood; 
 
         DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight);
 
