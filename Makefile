@@ -40,3 +40,4 @@ gpu:
 clean: 
 	rm -rf bin/*
 	touch bin/.gitkeep
+	rm -rf docs

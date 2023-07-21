@@ -13,12 +13,6 @@ float sigma = 0.07;
 int barrier = 1;
 int valueLeft = 3; 
 
-struct params {
-    double NLL; 
-    double d; 
-    double sigma; 
-};
-
 using namespace std::chrono;
 
 int main() {

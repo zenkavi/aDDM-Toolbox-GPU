@@ -2,3 +2,5 @@
 .vscode
 # ignore output binaries
 bin/*
+# ignore local copy of Doxygen output
+docs

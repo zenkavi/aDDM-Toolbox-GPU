@@ -250,16 +250,16 @@ double getTrialLikelihoodGPU(DDM ddm, DDMTrial trial, bool debug, int timeStep, 
         for (auto s : changeUp) {
             currChangeUp.push_back(s.at(time));
         }
-        // std::vector<double> changeUpCDFs;
-        // for (int i = 0; i < currChangeUp.size(); i++) {
-        //     float x = currChangeUp[i];
-        //     changeUpCDFs.push_back(
-        //         1 - cumulativeDensityFunction(mean, ddm.sigma, x)
-        //     );
-        // }
+        std::vector<double> changeUpCDFs;
+        for (int i = 0; i < currChangeUp.size(); i++) {
+            float x = currChangeUp[i];
+            changeUpCDFs.push_back(
+                1 - cumulativeDensityFunction(mean, ddm.sigma, x)
+            );
+        }
 
-        std::vector<double> changeUpCDFs(currChangeUp.size());
-        computeChangeUpCDFsGPU(currChangeUp.data(), changeUpCDFs.data(), currChangeUp.size(), mean, ddm.sigma);
+        // std::vector<double> changeUpCDFs(currChangeUp.size());
+        // computeChangeUpCDFsGPU(currChangeUp.data(), changeUpCDFs.data(), currChangeUp.size(), mean, ddm.sigma);
 
 
         if (debug) {
