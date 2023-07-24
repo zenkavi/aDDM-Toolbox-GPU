@@ -8,269 +8,250 @@ __device__ int __RC2IDX(int row, int col, int columns_per_row) {
 }
 
 __device__ double pdf(float x, float mean, float sigma) {
-    double first = exp(-0.5 * pow((x - mean) / sigma, 2));
-    double second = sigma * sqrt(2 * M_PI);
+    double first = expf(-0.5 * powf((x - mean) / sigma, 2));
+    double second = sigma * sqrtf(2 * M_PI);
     return first / second; 
 }
 
 __global__
-void getTrialLikelihoodKernel(bool debug, int trialsPerThread, int *RTs, int *choices, int *valDiffs, double* likelihoods, int numTrials, float d, float sigma, int barrier, int nonDecisionTime, int timeStep, float approxStateStep, float dec) {
-int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    // printf("TID = %i\n", tid);
+void getTrialLikelihoodKernel(
+    bool debug, 
+    int trialsPerThread, 
+    int *RTs, 
+    int *choices, 
+    int *valDiffs, 
+    double* likelihoods,
+    int numTrials, 
+    float *states, 
+    int biasState,
+    float d, 
+    float sigma, 
+    int barrier, 
+    int nonDecisionTime, 
+    int timeStep, 
+    float approxStateStep, 
+    float dec) {
 
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < numTrials / trialsPerThread) {
+            for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
 
-        for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
-
-    
-
-        // printf("entering for tid %i\n", tid);
-        int choice = choices[trialNum];
-        int RT = RTs[trialNum];
-        int valDiff = valDiffs[trialNum];
+            int choice = choices[trialNum];
+            int RT = RTs[trialNum];
+            int valDiff = valDiffs[trialNum];
 
 
-        // printf("choice %i, RT %i, vd %i\n", choice, RT, valDiff);
+            int numTimeSteps = RT / timeStep; 
 
-        float bias = 0; 
+            // requires compute capability 2.x
+            float* barrierUp = new float[numTimeSteps];
+            float *barrierDown = new float[numTimeSteps];
 
-        int numTimeSteps = RT / timeStep; 
-
-        // requires compute capability 2.x
-        float* barrierUp = new float[numTimeSteps];
-        float *barrierDown = new float[numTimeSteps];
-
-        for (int i = 0 ; i < numTimeSteps; i++) {
-            barrierUp[i] = barrier / (1 + (dec * i));
-            barrierDown[i] = -barrier / (1 + (dec * i));
-        }
-
-        int halfNumStateBins = ceil(barrier / approxStateStep); 
-        if (debug) printf("half num state bins %i\n", halfNumStateBins);
-        float stateStep = barrier / (halfNumStateBins + 0.5);
-        if (debug) printf("state step %f\n", stateStep);
-        int numStates = 2 * halfNumStateBins + 1; 
-
-
-        float *states = new float[numStates];
-        int s = 0; 
-        float biasStateVal = MAXFLOAT; 
-        int biasState; 
-        float r; 
-        for (float ss = barrierDown[0] + (stateStep / 2); ss <= barrierUp[0] - (stateStep / 2); ss += stateStep) {
-            states[s] = ss;
-            r = abs(ss - bias); 
-            if (r < biasStateVal) {
-                biasState = s;
-                biasStateVal = r; 
+            for (int i = 0 ; i < numTimeSteps; i++) {
+                barrierUp[i] = barrier / (1 + (dec * i));
+                barrierDown[i] = -barrier / (1 + (dec * i));
             }
-            s++;
-        }
 
-        if (debug) {
+            int halfNumStateBins = ceil(barrier / approxStateStep); 
+            if (debug) printf("half num state bins %i\n", halfNumStateBins);
+            float stateStep = barrier / (halfNumStateBins + 0.5);
+            if (debug) printf("state step %f\n", stateStep);
+            int numStates = 2 * halfNumStateBins + 1; 
+
+            double *prStates = new double[numStates];
             for (int i = 0; i < numStates; i++) {
-                printf("states[%i] = %f\n", i, states[i]);
+                prStates[i] = (i == biasState) ? 1 : 0; 
             }
-            printf("bias state %i\n", biasState);
-        }
 
-        double *prStates = new double[numStates];
-        for (int i = 0; i < numStates; i++) {
-            prStates[i] = (i == biasState) ? 1 : 0; 
-        }
-
-        double *probUpCrossing = new double[numTimeSteps];
-        double *probDownCrossing = new double[numTimeSteps];
-        for (int i = 0; i < numTimeSteps; i++) {
-            probUpCrossing[i] = 0; 
-            probDownCrossing[i] = 0; 
-        }
-
-
-        if (debug) {
-            for (int i = 0 ; i < numStates ; i++) {
-                printf("prStates[%i] = %f\n", i, prStates[i]);
+            double *probUpCrossing = new double[numTimeSteps];
+            double *probDownCrossing = new double[numTimeSteps];
+            for (int i = 0; i < numTimeSteps; i++) {
+                probUpCrossing[i] = 0; 
+                probDownCrossing[i] = 0; 
             }
-        }
-        
 
-        float *changeMatrix = new float[numStates * numStates];
-        for (int i = 0; i < numStates; i++) {
-            for (int j = 0; j < numStates; j++) {
-                changeMatrix[__RC2IDX(i, j, numStates)] = states[i] - states[j];
+            if (debug) {
+                for (int i = 0 ; i < numStates ; i++) {
+                    printf("prStates[%i] = %f\n", i, prStates[i]);
+                }
             }
-        }
+            
 
-        float *changeUp = new float[numStates * numTimeSteps];
-        for (int i = 0; i < numStates; i++) {
-            for (int j = 0; j < numTimeSteps; j++) {
-                changeUp[__RC2IDX(i, j, numTimeSteps)] = barrierUp[j] - states[i];
-            }
-        }
-
-        float *changeDown = new float[numStates * numTimeSteps];
-        for (int i = 0; i < numStates; i++) {
-            for (int j = 0; j < numTimeSteps; j++) {
-                changeDown[__RC2IDX(i, j, numTimeSteps)] = barrierDown[j] - states[i];
-            }
-        }
-
-        if (debug) {
-            printf("change matrix\n");
-            for (int i = 0; i < numStates * numStates; i++) {
-                printf("%f ", changeMatrix[i]);
-                if ((i + 1) % numStates == 0) {
-                    printf("\n");
+            float *changeMatrix = new float[numStates * numStates];
+            for (int i = 0; i < numStates; i++) {
+                for (int j = 0; j < numStates; j++) {
+                    changeMatrix[__RC2IDX(i, j, numStates)] = states[i] - states[j];
                 }
             }
 
-            printf("change up\n");
-            for (int i = 0; i < numStates * numTimeSteps; i++) {
-                printf("%f ", changeUp[i]);
-                if ((i + 1) % numTimeSteps == 0) {
-                    printf("\n");
+            float *changeUp = new float[numStates * numTimeSteps];
+            for (int i = 0; i < numStates; i++) {
+                for (int j = 0; j < numTimeSteps; j++) {
+                    changeUp[__RC2IDX(i, j, numTimeSteps)] = barrierUp[j] - states[i];
                 }
             }
-        }
 
-
-        int elapsedNDT = 0;
-        bool recomputePDCM = true; 
-        float prevMean = 0; 
-        float *probDistChangeMatrix = new float[numStates * numStates];
-
-        for (int time = 1; time < numTimeSteps; time++) {
-
-            if (debug) printf(
-                "============\n timestep %i \n============", time
-            );
-
-            float mean; 
-            if (elapsedNDT < nonDecisionTime / timeStep) {
-                mean = 0; 
-                elapsedNDT += 1; 
-            } else {
-                mean = d * valDiff;
-            }
-
-            if (mean != prevMean) {
-                recomputePDCM = true;
-            } else {
-                recomputePDCM = false; 
-            }
-
-            if (recomputePDCM || time == 1) {
-                for (int i = 0; i < numStates; i++) {
-                    for (int j = 0; j < numStates; j++) {
-                        float x = changeMatrix[__RC2IDX(i, j, numStates)];
-                        probDistChangeMatrix[__RC2IDX(i, j, numStates)] = pdf(x, mean, sigma);
-                    }
+            float *changeDown = new float[numStates * numTimeSteps];
+            for (int i = 0; i < numStates; i++) {
+                for (int j = 0; j < numTimeSteps; j++) {
+                    changeDown[__RC2IDX(i, j, numTimeSteps)] = barrierDown[j] - states[i];
                 }
             }
 
             if (debug) {
-                printf("PDCM\n");
+                printf("change matrix\n");
                 for (int i = 0; i < numStates * numStates; i++) {
-                    printf("%f ", probDistChangeMatrix[i]);
+                    printf("%f ", changeMatrix[i]);
                     if ((i + 1) % numStates == 0) {
+                        printf("\n");
+                    }
+                }
+
+                printf("change up\n");
+                for (int i = 0; i < numStates * numTimeSteps; i++) {
+                    printf("%f ", changeUp[i]);
+                    if ((i + 1) % numTimeSteps == 0) {
                         printf("\n");
                     }
                 }
             }
 
-            double rowSum; 
+
+            int elapsedNDT = 0;
+            bool recomputePDCM = true; 
+            float prevMean = 0; 
+            float *probDistChangeMatrix = new float[numStates * numStates];
             double* prStatesNew = new double[numStates];
-            for (int i = 0; i < numStates; i++) {
-                rowSum = 0; 
-                for (int j = 0; j < numStates; j++) {
-                    rowSum += stateStep * probDistChangeMatrix[__RC2IDX(i, j, numStates)] * prStates[j];
-                }
-                prStatesNew[i] = (states[i] > barrierUp[time] || states[i] < barrierDown[time]) ? 0 : rowSum;
-            }
-
-            if (debug) {
-                for (int i = 0 ; i < numStates ; i++) {
-                    printf("prStatesNew[%i] = %f\n", i, prStatesNew[i]);
-                }
-            }
-
             float *changeUpCDFs = new float[numStates];
-            for (int i = 0; i < numStates; i++) {
-                float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
-                changeUpCDFs[i] = 1 - normcdf((x - mean) / sigma);
-            }
-            if (debug) {
-                for (int i = 0; i < numStates; i++) {
-                    printf("changeUpCDFs[%i] = %f\n", i, changeUpCDFs[i]);
-                }
-            }
-            double tempUpCross = 0; 
-            for (int i = 0; i < numStates; i++) {
-                tempUpCross += changeUpCDFs[i] * prStates[i];
-            }
-
             float *changeDownCDFs = new float[numStates];
-            for (int i = 0; i < numStates; i++) {
-                float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
-                changeDownCDFs[i] = normcdf((x - mean) / sigma);
-            }
-            if (debug) {
+
+            for (int time = 1; time < numTimeSteps; time++) {
+
+                if (debug) printf(
+                    "============\n timestep %i \n============", time
+                );
+
+                float mean; 
+                if (elapsedNDT < nonDecisionTime / timeStep) {
+                    mean = 0; 
+                    elapsedNDT += 1; 
+                } else {
+                    mean = d * valDiff;
+                }
+
+                if (mean != prevMean) {
+                    recomputePDCM = true;
+                } else {
+                    recomputePDCM = false; 
+                }
+
+                if (recomputePDCM || time == 1) {
+                    for (int i = 0; i < numStates; i++) {
+                        for (int j = 0; j < numStates; j++) {
+                            float x = changeMatrix[__RC2IDX(i, j, numStates)];
+                            probDistChangeMatrix[__RC2IDX(i, j, numStates)] = pdf(x, mean, sigma);
+                        }
+                    }
+                }
+
+                if (debug) {
+                    printf("PDCM\n");
+                    for (int i = 0; i < numStates * numStates; i++) {
+                        printf("%f ", probDistChangeMatrix[i]);
+                        if ((i + 1) % numStates == 0) {
+                            printf("\n");
+                        }
+                    }
+                }
+
+                double rowSum; 
                 for (int i = 0; i < numStates; i++) {
-                    printf("changeDownCDFs[%i] = %f\n", i, changeDownCDFs[i]);
+                    rowSum = 0; 
+                    for (int j = 0; j < numStates; j++) {
+                        rowSum += stateStep * probDistChangeMatrix[__RC2IDX(i, j, numStates)] * prStates[j];
+                    }
+                    prStatesNew[i] = (states[i] > barrierUp[time] || states[i] < barrierDown[time]) ? 0 : rowSum;
+                }
+
+                if (debug) {
+                    for (int i = 0 ; i < numStates ; i++) {
+                        printf("prStatesNew[%i] = %f\n", i, prStatesNew[i]);
+                    }
+                }
+
+                for (int i = 0; i < numStates; i++) {
+                    float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
+                    changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
+                }
+                if (debug) {
+                    for (int i = 0; i < numStates; i++) {
+                        printf("changeUpCDFs[%i] = %f\n", i, changeUpCDFs[i]);
+                    }
+                }
+                double tempUpCross = 0; 
+                for (int i = 0; i < numStates; i++) {
+                    tempUpCross += changeUpCDFs[i] * prStates[i];
+                }
+
+                for (int i = 0; i < numStates; i++) {
+                    float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
+                    changeDownCDFs[i] = normcdff((x - mean) / sigma);
+                }
+                if (debug) {
+                    for (int i = 0; i < numStates; i++) {
+                        printf("changeDownCDFs[%i] = %f\n", i, changeDownCDFs[i]);
+                    }
+                }
+                double tempDownCross = 0; 
+                for (int i = 0; i < numStates; i++) {
+                    tempDownCross += changeDownCDFs[i] * prStates[i];
+                }
+
+                if (debug) printf("temp up cross = %f\n", tempUpCross);
+                if (debug) printf("temp down cross = %f\n", tempDownCross);
+
+                double sumIn = 0; 
+                double sumCurrent = tempUpCross + tempDownCross; 
+                for (int i = 0; i < numStates; i++) {
+                    sumIn += prStates[i];
+                    sumCurrent += prStatesNew[i];
+                }
+                double normFactor = sumIn / sumCurrent; 
+                for (int i = 0; i < numStates; i++) {
+                    prStates[i] = prStatesNew[i] * normFactor; 
+                }
+
+                probUpCrossing[time] = tempUpCross * normFactor; 
+                probDownCrossing[time] = tempDownCross * normFactor;
+
+                prevMean = mean;
+            }
+
+            double likelihood = 0; 
+            if (choice == -1) {
+                if (probUpCrossing[numTimeSteps - 1] > 0) {
+                    likelihood = probUpCrossing[numTimeSteps - 1];
+                }
+            } else if (choice == 1) {
+                if (probDownCrossing[numTimeSteps - 1] > 0) {
+                    likelihood = probDownCrossing[numTimeSteps - 1];
                 }
             }
-            double tempDownCross = 0; 
-            for (int i = 0; i < numStates; i++) {
-                tempDownCross += changeDownCDFs[i] * prStates[i];
-            }
 
-            if (debug) printf("temp up cross = %f\n", tempUpCross);
-            if (debug) printf("temp down cross = %f\n", tempDownCross);
-
-            double sumIn = 0; 
-            double sumCurrent = tempUpCross + tempDownCross; 
-            for (int i = 0; i < numStates; i++) {
-                sumIn += prStates[i];
-                sumCurrent += prStatesNew[i];
-            }
-            double normFactor = sumIn / sumCurrent; 
-            for (int i = 0; i < numStates; i++) {
-                prStates[i] = prStatesNew[i] * normFactor; 
-            }
-
-            probUpCrossing[time] = tempUpCross * normFactor; 
-            probDownCrossing[time] = tempDownCross * normFactor;
-
-            prevMean = mean;
-
+            delete[] barrierUp;
+            delete[] barrierDown;
+            delete[] probUpCrossing;
+            delete[] probDownCrossing;
+            delete[] prStates;
+            delete[] changeMatrix;
+            delete[] changeUp;
+            delete[] changeDown;
+            delete[] probDistChangeMatrix;
             delete[] prStatesNew;
             delete[] changeUpCDFs;
             delete[] changeDownCDFs;
-        }
-
-        double likelihood = 0; 
-        if (choice == -1) {
-            if (probUpCrossing[numTimeSteps - 1] > 0) {
-                likelihood = probUpCrossing[numTimeSteps - 1];
-            }
-        } else if (choice == 1) {
-            if (probDownCrossing[numTimeSteps - 1] > 0) {
-                likelihood = probDownCrossing[numTimeSteps - 1];
-            }
-        }
-
-        delete[] barrierUp;
-        delete[] barrierDown;
-        delete[] probUpCrossing;
-        delete[] probDownCrossing;
-        delete[] states;
-        delete[] prStates;
-        delete[] changeMatrix;
-        delete[] changeUp;
-        delete[] changeDown;
-        delete[] probDistChangeMatrix;
-        
-        likelihoods[trialNum] = -log(likelihood);
+            
+            likelihoods[trialNum] = -log(likelihood);
         }
     }    
 }
@@ -298,6 +279,32 @@ void DDM::callGetTrialLikelihoodKernel(
     cudaMemcpy(d_RTs, h_RTs, numTrials * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_choices, h_choices, numTrials * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_VDs, h_VDs, numTrials * sizeof(int), cudaMemcpyHostToDevice);
+    
+    int halfNumStateBins = ceil(barrier / approxStateStep); 
+    if (debug) printf("half num state bins %i\n", halfNumStateBins);
+    float stateStep = barrier / (halfNumStateBins + 0.5);
+    if (debug) printf("state step %f\n", stateStep);
+    int numStates = 2 * halfNumStateBins + 1; 
+
+    float *states = new float[numStates];
+    int s_idx = 0; 
+    float biasStateVal = MAXFLOAT; 
+    int biasState; 
+    float r; 
+    
+    for (float ss = -barrier + (stateStep / 2); ss <= barrier - (stateStep / 2); ss += stateStep) {
+        states[s_idx] = ss;
+        r = abs(ss - bias); 
+        if (r < biasStateVal) {
+            biasState = s_idx;
+            biasStateVal = r; 
+        }
+        s_idx++;
+    }
+
+    float *d_states; 
+    cudaMalloc((void**) &d_states, numStates * sizeof(float));
+    cudaMemcpy(d_states, states, numStates * sizeof(float), cudaMemcpyHostToDevice);
 
     getTrialLikelihoodKernel<<<numBlocks, threadsPerBlock>>>(
         debug,
@@ -307,6 +314,8 @@ void DDM::callGetTrialLikelihoodKernel(
         d_VDs,
         likelihoods,
         numTrials,
+        d_states, 
+        biasState,
         d, sigma, barrier,
         nonDecisionTime,
         timeStep,
@@ -317,9 +326,11 @@ void DDM::callGetTrialLikelihoodKernel(
     cudaFree(d_RTs);
     cudaFree(d_choices);
     cudaFree(d_VDs);
+    cudaFree(d_states);
     delete[] h_RTs;
     delete[] h_choices;
     delete[] h_VDs;
+    delete[] states;
     }
         
 

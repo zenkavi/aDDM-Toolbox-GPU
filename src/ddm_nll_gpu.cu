@@ -19,7 +19,6 @@ float sigma = 0.07;
 int barrier = 1;
 int valueLeft = 3;
 
-
 int main() {
     std::vector<DDMTrial> hostTrials; 
     std::ifstream file("results/ddm_simulations.csv");
