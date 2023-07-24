@@ -7,7 +7,7 @@
 #include <iomanip> 
 #include "nlohmann/json.hpp"
 #include "util.h"
-#include "ddm.h"
+#include "ddm.cuh"
 
 #ifdef IGNORE_SPACE_CONSTRAINTS
     bool restrictSpace = false; 
@@ -26,7 +26,6 @@ DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->choice = choice;
     this->valueLeft = valueLeft;
     this->valueRight = valueRight;
-    this->likelihood = 0; 
 }
 
 DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, float bias) {
@@ -353,16 +352,16 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     return trial;
 }
 
-double DDMParallelNLL(DDM ddm, std::vector<DDMTrial> trials) {
+double DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
     double NLL = 0;
     BS::thread_pool pool;
     BS::multi_future<double> futs = pool.parallelize_loop(
         0, trials.size(), 
-        [&ddm, &trials](const int a, const int b) {
+        [this, &trials, debug, timeStep, approxStateStep](const int a, const int b) {
             double block_total = 0; 
             for (int i = a; i < b; ++i) {
                 block_total += -log(
-                    ddm.getTrialLikelihood(trials[i])
+                    this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep)
                 );
             }
             return block_total;

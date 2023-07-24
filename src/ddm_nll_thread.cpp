@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/ddm.h"
+#include "../include/ddm.cuh"
 #include "../include/util.h"
 #include "../include/bshoshany/BS_thread_pool.hpp"
 #include <chrono>
@@ -42,7 +42,7 @@ int main() {
     DDM ddm = DDM(d, sigma, barrier);
 
     auto start = high_resolution_clock::now(); 
-    double NLL = DDMParallelNLL(ddm, trials);
+    double NLL = ddm.computeParallelNLL(trials);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 

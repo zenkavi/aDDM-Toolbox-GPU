@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 
 std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};

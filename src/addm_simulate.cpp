@@ -5,7 +5,7 @@
 #include <fstream>
 #include <cassert>
 #include "addm.h"
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 
 int N = 1000;

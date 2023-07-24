@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "../include/addm.h"
-#include "../include/ddm.h"
+#include "../include/ddm.cuh"
 #include "../include/util.h"
 
 std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006};

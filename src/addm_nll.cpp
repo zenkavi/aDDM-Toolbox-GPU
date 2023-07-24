@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "addm.h"
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 
 float d = 0.005;

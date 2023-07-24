@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "ddm.h"
+#include "ddm.cuh"
 
 using namespace std;
 

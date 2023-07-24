@@ -11,8 +11,7 @@ class DDMTrial {
         int valueLeft;
         int valueRight;
         std::vector<float>RDVs;
-        int timeStep;
-        double likelihood; 
+        int timeStep; 
 
         DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight);
 
@@ -21,6 +20,12 @@ class DDMTrial {
 
 class DDM {
     private:
+        void callGetTrialLikelihoodKernel(
+            bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
+            DDMTrial *trials, double *likelihoods, 
+            int numTrials, float d, float sigma, float barrier, 
+            int nonDecisionTime, int timeStep, float approxStateStep, float dec);
+        
     public: 
         float d; 
         float sigma; 
@@ -35,8 +40,11 @@ class DDM {
         double getTrialLikelihood(DDMTrial trial, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
         DDMTrial simulateTrial(int ValueLeft, int ValueRight, int timeStep=10);
+
+        double computeParallelNLL(std::vector<DDMTrial> trials, bool debug=false, int timeStep=10, float approxStateStep=0.1);
+
+        double computeGPUNLL(std::vector<DDMTrial> trials, bool debug=false, int trialsPerThread=10, int timeStep=10, float approxStateStep=0.1);
 };
 
-double DDMParallelNLL(DDM ddm, std::vector<DDMTrial> trials);
 
 #endif 

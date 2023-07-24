@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <random> 
 #include "nlohmann/json.hpp"
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 #include "addm.h"
 

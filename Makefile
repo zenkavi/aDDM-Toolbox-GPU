@@ -1,13 +1,14 @@
 MACROS := -DIGNORE_SPACE_CONSTRAINTS
 
-CXX := g++ -Wall
+CXX := g++ 
 CXXLIBS := lib/ddm.cpp lib/addm.cpp lib/util.cpp
 CXXFLAGS := -Ofast -msse4.2 -march=native
 LIB := -L lib -lpthread
 INC := -I include
 
 NVCC := /usr/local/cuda-12.2/bin/nvcc
-NVCCFLAGS := -O3
+NVCCFLAGS := 
+CUDALIBS := lib/ddm.cu
 
 SRC_DIR := lib
 BUILD_DIR := bin 
@@ -35,7 +36,7 @@ tests:
 all: sim nll mle tests
 
 gpu: 
-	$(NVCC) $(NVCCFLAGS) src/test2.cu $(CXXLIBS) $(LIB) $(INC) -o test
+	$(NVCC) $(NVCCFLAGS) src/test.cu $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o test
 	
 clean: 
 	rm -rf bin/*

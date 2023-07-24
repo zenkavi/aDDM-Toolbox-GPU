@@ -5,7 +5,7 @@
 #include <fstream>
 #include <chrono>
 #include <sstream>
-#include "../include/ddm.h"
+#include "../include/ddm.cuh"
 #include "../include/util.h"
 
 
@@ -59,7 +59,7 @@ int main() {
 
     for (DDM ddm : ddms) {
         std::cout << "Testing combination d=" << ddm.d << " sigma=" << ddm.sigma << std::endl;
-        double NLL = DDMParallelNLL(ddm, trials);
+        double NLL = ddm.computeParallelNLL(trials);
         std::cout << "NLL=" << NLL << std::endl;
         if (NLL < minNLL) {
             minNLL = NLL;

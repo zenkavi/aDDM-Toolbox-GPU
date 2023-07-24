@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 
 float d = 0.005;
@@ -47,10 +47,9 @@ int main() {
     auto start = high_resolution_clock::now();
     double NLL = 0; 
     for (DDMTrial dt : trials) {
-        double prob = ddm.getTrialLikelihood(dt, true);
+        double prob = ddm.getTrialLikelihood(dt);
         fp << dt.choice << "," << dt.RT << "," << prob << "\n";
         NLL += -log(prob);
-        break; 
     }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);

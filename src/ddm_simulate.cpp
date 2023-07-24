@@ -3,7 +3,7 @@
 #include <random>
 #include <ctime>
 #include <fstream>
-#include "ddm.h"
+#include "ddm.cuh"
 #include "util.h"
 
 int N = 1000;

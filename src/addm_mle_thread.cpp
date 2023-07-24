@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "../include/addm.h"
-#include "../include/ddm.h"
+#include "../include/ddm.cuh"
 #include "../include/util.h"
 
 

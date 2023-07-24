@@ -1,28 +1,7 @@
-#include <iostream>
-#include <vector> 
-#include <random>
-#include <ctime>
-#include <fstream>
-#include <sstream>
-#include <chrono>
-#include <stdio.h>
-#include "../include/ddm.cuh"
-#include "../include/util.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-
-
-float d = 0.005;
-float sigma = 0.07;
-int barrier = 1;
-int valueLeft = 3;
-
-int TS = 10; 
-float ASS = 0.1; 
-float DEC = 0; 
-int NDT = 0; 
+#include "../include/ddm.cuh"
+#include "../include/util.h"
 
 __device__ int __RC2IDX(int row, int col, int columns_per_row) {
     return (row * columns_per_row) + col; 
@@ -34,14 +13,9 @@ __device__ double pdf(float x, float mean, float sigma) {
     return first / second; 
 }
 
-
-int trialsPerThread = 10; 
-
-// CUDA Kernel to calculate trial likelihoods in parallel
 __global__
 void getTrialLikelihoodKernel(bool debug, int trialsPerThread, int *RTs, int *choices, int *valDiffs, double* likelihoods, int numTrials, float d, float sigma, int barrier, int nonDecisionTime, int timeStep, float approxStateStep, float dec) {
-    
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+int tid = blockIdx.x * blockDim.x + threadIdx.x;
     // printf("TID = %i\n", tid);
 
     if (tid < numTrials / trialsPerThread) {
@@ -296,14 +270,17 @@ void getTrialLikelihoodKernel(bool debug, int trialsPerThread, int *RTs, int *ch
         delete[] changeDown;
         delete[] probDistChangeMatrix;
         
-        printf("computed likelihood: %i %i %f\n", choice, RT, likelihood);
-        likelihoods[trialNum] = likelihood;
+        likelihoods[trialNum] = -log(likelihood);
         }
-    }
-    
+    }    
 }
 
-void callGetTrialLikelihoodKernel(bool debug, int numBlocks, int numThreadsPerBlock, DDMTrial *trials, double *likelihoods, int numTrials, float d, float sigma, float barrier, int nonDecisionTime, int timeStep, float approxStateStep, float dec) {
+void DDM::callGetTrialLikelihoodKernel(
+    bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
+    DDMTrial *trials, double *likelihoods, 
+    int numTrials, float d, float sigma, float barrier, 
+    int nonDecisionTime, int timeStep, float approxStateStep, float dec) {
+
     int *d_RTs, *d_choices, *d_VDs;
     cudaMalloc((void**)&d_RTs, numTrials * sizeof(int));
     cudaMalloc((void**)&d_choices, numTrials * sizeof(int));
@@ -322,7 +299,7 @@ void callGetTrialLikelihoodKernel(bool debug, int numBlocks, int numThreadsPerBl
     cudaMemcpy(d_choices, h_choices, numTrials * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_VDs, h_VDs, numTrials * sizeof(int), cudaMemcpyHostToDevice);
 
-    getTrialLikelihoodKernel<<<numBlocks, numThreadsPerBlock>>>(
+    getTrialLikelihoodKernel<<<numBlocks, threadsPerBlock>>>(
         debug,
         trialsPerThread,
         d_RTs,
@@ -343,61 +320,38 @@ void callGetTrialLikelihoodKernel(bool debug, int numBlocks, int numThreadsPerBl
     delete[] h_RTs;
     delete[] h_choices;
     delete[] h_VDs;
-}
-
-
-int main() {
-    std::vector<DDMTrial> hostTrials; 
-    std::ifstream file("results/ddm_simulations.csv");
-    std::string line;
-    std::getline(file, line);
-    int choice; 
-    int RT; 
-    int valDiff;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string field;
-        std::getline(ss, field, ',');
-        choice = std::stoi(field);
-        std::getline(ss, field, ',');
-        RT = std::stoi(field);
-        std::getline(ss, field, ',');
-        valDiff = std::stoi(field);
-        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueLeft - valDiff);
-        hostTrials.push_back(dt);
     }
-    file.close();
-    std::cout << "Counted " << hostTrials.size() << " trials." << std::endl;
+        
 
-    // Move data to GPU memory
-    int numTrials = hostTrials.size();
+double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int trialsPerThread, int timeStep, float approxStateStep) {
+    int numTrials = trials.size(); 
+
     DDMTrial* d_trials;
     double* d_likelihoods;
-    cudaMalloc((void**)&d_trials, numTrials * sizeof(DDMTrial));
-    cudaMalloc((void**)&d_likelihoods, numTrials * sizeof(double));
-    cudaMemcpy(d_trials, hostTrials.data(), numTrials * sizeof(DDMTrial), cudaMemcpyHostToDevice);
+    cudaMalloc((void**) &d_trials, numTrials * sizeof(DDMTrial));
+    cudaMalloc((void**) &d_likelihoods, numTrials * sizeof(double));
+    cudaMemcpy(d_trials, trials.data(), numTrials * sizeof(DDMTrial), cudaMemcpyHostToDevice);
 
-
-    int numThreadsPerBlock = 64;
+    int threadsPerBlock = 64; 
     int numBlocks = 16;
 
-    // Launch the CUDA kernel
-    callGetTrialLikelihoodKernel(false, numBlocks, numThreadsPerBlock, hostTrials.data(), d_likelihoods, hostTrials.size(), d, sigma, barrier, NDT, TS, ASS, DEC);
+    callGetTrialLikelihoodKernel(
+        debug, trialsPerThread, numBlocks, threadsPerBlock, 
+        trials.data(), d_likelihoods, 
+        numTrials, d, sigma, barrier, 
+        nonDecisionTime, timeStep, approxStateStep, DECAY);
 
-    // Copy results back to the CPU
     std::vector<double> h_likelihoods(numTrials);
     cudaMemcpy(h_likelihoods.data(), d_likelihoods, numTrials * sizeof(double), cudaMemcpyDeviceToHost);
 
-    // Free allocated device memory
     cudaFree(d_trials);
     cudaFree(d_likelihoods);
 
     double NLL = 0;
     for (int i = 0; i < numTrials; i++) {
-        NLL += -log(h_likelihoods[i]);
+        NLL += h_likelihoods[i];
     }
 
-    std::cout << "NLL: " << NLL << std::endl;
+    return NLL;
 
-    return 0;
 }
