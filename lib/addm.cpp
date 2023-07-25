@@ -54,14 +54,16 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     if (this->nonDecisionTime > 0) {
         int remainingNDT = this->nonDecisionTime;
         assert(trial.fixItem.size() == trial.fixTime.size());
-        for (int i = 0; i < trial.fixItem.size(); i++) {
+        for (int i = 0; i < trial.fixItem.size(); i++) { 
             int fItem = trial.fixItem[i];
             int fTime = trial.fixTime[i];
             if (remainingNDT > 0) {
                 correctedFixItem.push_back(0);
                 correctedFixTime.push_back(min(remainingNDT, fTime));
+                fTime -= remainingNDT; 
                 correctedFixItem.push_back(fItem);
-                correctedFixTime.push_back(max(fTime - remainingNDT, 0));
+                correctedFixTime.push_back(max(fTime, 0));
+                remainingNDT -= fTime; 
             } else {
                 correctedFixItem.push_back(fItem);
                 correctedFixTime.push_back(fTime);
