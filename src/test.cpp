@@ -5,7 +5,8 @@
 #include <fstream>
 #include <chrono> 
 #include <sstream>
-#include "../include/addm.h"
+#include "../include/addm.cuh"
+#include "../include/ddm.cuh"
 #include "../include/util.h"
 
 using namespace std::chrono;
@@ -61,11 +62,7 @@ void testMLEfullGrid(FixationData fixationData) {
 
                 auto start = high_resolution_clock::now();
                 for (aDDM addm : testModels) {
-                    double NLL = 0; 
-                    for (aDDMTrial adt : dataset) {
-                        double prob = addm.getTrialLikelihood(adt);
-                        NLL += -log(prob);
-                    }
+                    double NLL = addm.computeParallelNLL(dataset);
                     if (NLL < minNLL) {
                         minNLL = NLL;
                         minD = addm.d;
@@ -92,14 +89,65 @@ void testMLEfullGrid(FixationData fixationData) {
     }
 }
 
+void testDDMtimeSpeedup() {
+    float d = 0.005;
+    float sigma = 0.07;
+    DDM ddm = DDM(d, sigma, barrier);
+    std::vector<DDMTrial> trials; 
+
+    for (int i = 0; i < N; i++) {
+        std::mt19937 generator(std::random_device{}());
+        std::uniform_int_distribution<std::size_t> distribution(0, valDiffs.size() - 1);
+        int rIDX = distribution(generator);
+
+        int valDiff = valDiffs.at(rIDX);
+        int valueLeft = 3;
+        int valueRight = valueLeft - valDiff;
+        trials.push_back(ddm.simulateTrial(valueLeft, valueRight));
+    }
+
+    std::cout << "Testing basic implementation" << std::endl; 
+    auto start = high_resolution_clock::now(); 
+    double NLL = 0; 
+    for (int i = 0; i < N; i++) {
+        NLL += -log(ddm.getTrialLikelihood(trials[i]));
+    }
+    auto stop = high_resolution_clock::now(); 
+    auto duration = duration_cast<milliseconds>(stop - start);
+    std::cout << "Time: " << duration.count() << std::endl;  
+    fp << "basic," << NLL << "," << duration.count() << std::endl; 
+
+    std::cout << "Testing CPU Multithreaded implementation" << std::endl; 
+    start = high_resolution_clock::now();
+    NLL = ddm.computeParallelNLL(trials);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<milliseconds>(stop - start);
+    std::cout << "Time: " << duration.count() << std::endl;  
+    fp << "multithread," << NLL << "," << duration.count() << std::endl;       
+
+    std::cout << "Testing GPU implementation" << std::endl; 
+    start = high_resolution_clock::now();
+    NLL = ddm.computeGPUNLL(trials);
+    stop = high_resolution_clock::now();
+    duration = duration_cast<milliseconds>(stop - start);
+    std::cout << "Time: " << duration.count() << std::endl;  
+    fp << "GPU," << NLL << "," << duration.count() << std::endl;       
+    
+}
+
 int main() {
     srand(time(NULL));
     
-    fp.open("results/test_addm.csv");
-    fp << "test,correctness,time\n";
+    // fp.open("results/test_addm.csv");
+    // fp << "test,correctness,time\n";
 
-    std::cout << "reading data..." << std::endl;
-    std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
-    FixationData fixationData = getEmpiricalDistributions(data);
-    testMLEfullGrid(fixationData);
+    // std::cout << "reading data..." << std::endl;
+    // std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
+    // FixationData fixationData = getEmpiricalDistributions(data);
+    // testMLEfullGrid(fixationData);
+
+    fp.close();
+    fp.open("results/test_ddm.csv");
+    fp << "test,NLL,time\n";
+    testDDMtimeSpeedup();
 }

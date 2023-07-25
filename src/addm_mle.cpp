@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/addm.h"
+#include "../include/addm.cuh"
 #include "../include/ddm.cuh"
 #include "../include/util.h"
 

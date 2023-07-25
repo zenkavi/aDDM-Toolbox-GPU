@@ -1,5 +1,5 @@
-#ifndef ADDM_H
-#define ADDM_H
+#ifndef ADDM_CUH
+#define ADDM_CUH
 
 #include <string>
 #include <vector>
@@ -45,6 +45,12 @@ class aDDMTrial: public DDMTrial {
 
 class aDDM: public DDM {
     private:
+        void callGetTrialLikelihoodKernel(
+            bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
+            aDDMTrial *trials, double *likelihoods, int numTrials, 
+            float d, float sigma, float theta, float barrier, 
+            int nonDecisionTime, int timeStep, float approxStateStep, float decay);
+
     public: 
         float theta;
 
@@ -92,17 +98,12 @@ class aDDM: public DDM {
         int valueLeft, int valueRight, FixationData fixationData, int timeStep=10, 
         int numFixDists=3, fixDists fixationDist={}, vector<int> timeBins={}
     );
+
+    double computeParallelNLL(std::vector<aDDMTrial> trials, bool debug=false, int timeStep=10, float approxStateStep=0.1);
+
+    double computeGPUNLL(std::vector<aDDMTrial> trials, bool debug=false, int trialsPerThread=10, int timeStep=10, float approxStateStep=0.1);
 };
 
-/**
- * @brief Compute the Negative Log Likelihood (NLL) for a given vector of aDDMTrials using
- * multithreading. Once all trial likelihoods are computed, return the total NLL for the dataset. 
- * 
- * @param addm aDDM object that calls getTrialLikelihood on each trial in the input dataset. 
- * @param trials Vector of trials to compute the total NLL for. Each trial's likelihood is computed in 
- * parallel blocks. 
- * @return double representing the total NLL for the entire dataset. 
- */
-double aDDMParallelNLL(aDDM addm, std::vector<aDDMTrial> trials);
+
 
 #endif 

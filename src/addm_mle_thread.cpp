@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/addm.h"
+#include "../include/addm.cuh"
 #include "../include/ddm.cuh"
 #include "../include/util.h"
 
@@ -93,7 +93,7 @@ int main() {
 
     for (aDDM addm : addms) {
         std::cout << "Testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << std::endl;
-        double NLL = aDDMParallelNLL(addm, trials);
+        double NLL = addm.computeParallelNLL(trials);
         std::cout << "NLL=" << NLL << std::endl;
         if (NLL < minNLL) {
             minNLL = NLL;

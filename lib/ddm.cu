@@ -2,16 +2,9 @@
 #include <cuda_runtime.h>
 #include "../include/ddm.cuh"
 #include "../include/util.h"
+#include "../include/cuda_util.cuh"
 
-__device__ int __RC2IDX(int row, int col, int columns_per_row) {
-    return (row * columns_per_row) + col; 
-}
 
-__device__ double pdf(float x, float mean, float sigma) {
-    double first = expf(-0.5 * powf((x - mean) / sigma, 2));
-    double second = sigma * sqrtf(2 * M_PI);
-    return first / second; 
-}
 
 __global__
 void getTrialLikelihoodKernel(
@@ -24,6 +17,8 @@ void getTrialLikelihoodKernel(
     int numTrials, 
     float *states, 
     int biasState,
+    int numStates, 
+    float stateStep, 
     float d, 
     float sigma, 
     int barrier, 
@@ -34,7 +29,7 @@ void getTrialLikelihoodKernel(
 
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < numTrials / trialsPerThread) {
-            for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
+        for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
 
             int choice = choices[trialNum];
             int RT = RTs[trialNum];
@@ -52,11 +47,7 @@ void getTrialLikelihoodKernel(
                 barrierDown[i] = -barrier / (1 + (dec * i));
             }
 
-            int halfNumStateBins = ceil(barrier / approxStateStep); 
-            if (debug) printf("half num state bins %i\n", halfNumStateBins);
-            float stateStep = barrier / (halfNumStateBins + 0.5);
-            if (debug) printf("state step %f\n", stateStep);
-            int numStates = 2 * halfNumStateBins + 1; 
+
 
             double *prStates = new double[numStates];
             for (int i = 0; i < numStates; i++) {
@@ -316,6 +307,8 @@ void DDM::callGetTrialLikelihoodKernel(
         numTrials,
         d_states, 
         biasState,
+        numStates,
+        stateStep,
         d, sigma, barrier,
         nonDecisionTime,
         timeStep,
@@ -337,16 +330,16 @@ void DDM::callGetTrialLikelihoodKernel(
 double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int trialsPerThread, int timeStep, float approxStateStep) {
     int numTrials = trials.size(); 
 
-    DDMTrial* d_trials;
-    double* d_likelihoods;
+    DDMTrial *d_trials;
+    double *d_likelihoods;
     cudaMalloc((void**) &d_trials, numTrials * sizeof(DDMTrial));
     cudaMalloc((void**) &d_likelihoods, numTrials * sizeof(double));
     cudaMemcpy(d_trials, trials.data(), numTrials * sizeof(DDMTrial), cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 64; 
+    int threadsPerBlock = 256; 
     int numBlocks = 16;
 
-    callGetTrialLikelihoodKernel(
+    DDM::callGetTrialLikelihoodKernel(
         debug, trialsPerThread, numBlocks, threadsPerBlock, 
         trials.data(), d_likelihoods, 
         numTrials, d, sigma, barrier, 

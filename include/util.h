@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "addm.h"
+#include "addm.cuh"
 
 // #ifndef __NVCC__
 #include "bshoshany/BS_thread_pool.hpp"

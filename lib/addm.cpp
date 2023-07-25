@@ -11,7 +11,7 @@
 #include "nlohmann/json.hpp"
 #include "ddm.cuh"
 #include "util.h"
-#include "addm.h"
+#include "addm.cuh"
 
 
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
@@ -174,14 +174,15 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     }
 
     assert(correctedFixItem.size() == correctedFixTime.size());
-    for (int i = 0; i < correctedFixItem.size(); i++) {
-        int fItem = correctedFixItem[i];
-        int fTime = correctedFixTime[i];
+    std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size()));
+    for (int c = 0; c < correctedFixItem.size(); c++) {
+        int fItem = correctedFixItem[c];
+        int fTime = correctedFixTime[c];
 
         if (debug) {
             std::cout << "============" << std::endl;
-            std::cout << "fItem " << i << ": " << fItem << std::endl;
-            std::cout << "fTime " << i << ": " << fTime << std::endl;
+            std::cout << "fItem " << c << ": " << fItem << std::endl;
+            std::cout << "fTime " << c << ": " << fTime << std::endl;
             std::cout << "============" << std::endl;
         }
 
@@ -196,19 +197,16 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             mean = 0; 
         }
 
+        for (size_t i = 0; i < states.size(); i++) {
+            for (size_t j = 0; j < states.size(); j++) {
+                float x = changeMatrix[i][j];
+                probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
+            }
+        }
+        if (debug) {
+            printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
+        }
         for (int t = 0; t < fTime / timeStep; t++) {
-            // Compute the likelihood of each change in the matrix using a probability density function with parameters mean and sigma. 
-            std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size()));
-            for (size_t i = 0; i < states.size(); i++) {
-                for (size_t j = 0; j < states.size(); j++) {
-                    float x = changeMatrix[i][j];
-                    probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
-                }
-            }
-            if (debug) {
-                printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
-            }
-
             // Fetch the probability states for the previous timeStep
             std::vector<double> prTimeSlice(states.size());
             for (size_t i = 0; i < states.size(); i++) {
@@ -493,28 +491,24 @@ aDDMTrial aDDM::simulateTrial(
     return trial;
 }
 
-double aDDMParallelNLL(aDDM addm, std::vector<aDDMTrial> trials) {
+double aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
     double NLL = 0; 
-
-    // #ifndef __NVCC__
-        BS::thread_pool pool;
-        BS::multi_future<double> futs = pool.parallelize_loop(
-            0, trials.size(), 
-            [&addm, &trials](const int a, const int b) {
-                double block_total = 0; 
-                for (int i = a; i < b; ++i) {
-                    block_total += -log(
-                        addm.getTrialLikelihood(trials[i])
-                    );
-                }
-                return block_total;
+    BS::thread_pool pool;
+    BS::multi_future<double> futs = pool.parallelize_loop(
+        0, trials.size(), 
+        [this, &trials, debug, timeStep, approxStateStep](const int a, const int b) {
+            double block_total = 0; 
+            for (int i = a; i < b; ++i) {
+                block_total += -log(
+                    this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep)
+                );
             }
-        );
-        std::vector<double> totals = futs.get();
-        for (const double t : totals) {
-            NLL += t; 
+            return block_total;
         }
-    // #endif 
-
+    );
+    std::vector<double> totals = futs.get();
+    for (const double t : totals) {
+        NLL += t; 
+    }
     return NLL;
 }

@@ -8,7 +8,7 @@ INC := -I include
 
 NVCC := /usr/local/cuda-12.2/bin/nvcc
 NVCCFLAGS := -Xptxas -O3
-CUDALIBS := lib/ddm.cu
+CUDALIBS := lib/ddm.cu lib/addm.cu
 
 SRC_DIR := lib
 BUILD_DIR := bin
@@ -31,13 +31,13 @@ mle:
 	$(CXX) $(CXXFLAGS) src/addm_mle_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o $(BUILD_DIR)/addm_mle_thread
 
 tests:
-	$(CXX) $(CXXFLAGS) src/test.cpp $(CXXLIBS) $(LIB) $(INC) -o $(BUILD_DIR)/test
+	$(NVCC) $(NVCCFLAGS) src/test.cpp $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/test
 
 all: sim nll mle tests
 
 gpu: 
-	$(NVCC) $(NVCCFLAGS) src/ddm_nll_gpu.cu $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/ddm_nll_gpu
-	
+#	$(NVCC) $(NVCCFLAGS) src/ddm_nll_gpu.cu $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/ddm_nll_gpu
+	$(NVCC) $(NVCCFLAGS) src/addm_nll_gpu.cu $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/addm_nll_gpu
 clean: 
 	rm -rf bin/*
 	touch bin/.gitkeep

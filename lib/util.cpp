@@ -13,7 +13,7 @@
 #include "bshoshany/BS_thread_pool.hpp"
 #include "nlohmann/json.hpp"
 #include "util.h"
-#include "addm.h"
+#include "addm.cuh"
 
 using json = nlohmann::json;
 

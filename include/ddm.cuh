@@ -1,5 +1,5 @@
-#ifndef DDM_H
-#define DDM_H
+#ifndef DDM_CUH
+#define DDM_CUH
 
 #include <vector> 
 
@@ -22,8 +22,8 @@ class DDM {
     private:
         void callGetTrialLikelihoodKernel(
             bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
-            DDMTrial *trials, double *likelihoods, 
-            int numTrials, float d, float sigma, float barrier, 
+            DDMTrial *trials, double *likelihoods, int numTrials, 
+            float d, float sigma, float barrier, 
             int nonDecisionTime, int timeStep, float approxStateStep, float dec);
         
     public: 
