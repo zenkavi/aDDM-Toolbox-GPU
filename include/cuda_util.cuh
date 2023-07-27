@@ -1,5 +1,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <cmath> 
 
 __host__ __device__ inline int __RC2IDX(int row, int col, int columns_per_row) {
     return (row * columns_per_row) + col; 

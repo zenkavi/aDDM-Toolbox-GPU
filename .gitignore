@@ -4,3 +4,5 @@
 bin/*
 # ignore local copy of Doxygen output
 docs
+# ignore installation object files
+obj/*
