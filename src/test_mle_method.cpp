@@ -4,20 +4,18 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/ddm.cuh"
-#include "../include/util.h"
-#include "bshoshany/BS_thread_pool.hpp"
-#include <chrono>
+#include "../include/addm.cuh"
+#include "util.h"
 
-using namespace std::chrono;
+std::vector<float> rangeD = {0.003, 0.004, 0.005};
+std::vector<float> rangeSigma = {0.07, 0.08, 0.09};
 
-float d = 0.005;
-float sigma = 0.07;
 int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
     std::vector<DDMTrial> trials; 
+    std::vector<DDM> ddms;
     std::ifstream file("results/ddm_simulations.csv");
     std::string line;
     std::getline(file, line);
@@ -38,14 +36,11 @@ int main() {
     }
     file.close();
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
-    
-    DDM ddm = DDM(d, sigma, barrier);
 
-    auto start = high_resolution_clock::now(); 
-    double NLL = ddm.computeParallelNLL(trials);
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
+    // DDM optimal = DDM::fitModelBasic(trials, rangeD, rangeSigma, 1, "gpu");
 
-    std::cout << "Duration: " << duration.count() << " ms" << std::endl;
-    std::cout << "NLL: " << NLL << std::endl;
+    DDM optimal = DDM::fitModelOptimized(trials, 0.1, 1, 0.05, 0.5, 1, 1, "gpu");
+
+    std::cout << optimal.d << std::endl; 
+    std::cout << optimal.sigma << std::endl; 
 }

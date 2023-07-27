@@ -439,4 +439,53 @@ double aDDM::computeGPUNLL(std::vector<aDDMTrial> trials, bool debug, int trials
     return NLL;
 }
 
+aDDM aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod) {
+    if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
+        throw std::invalid_argument("Input computeMethod is invalid.");
+    }
+
+    std::vector<aDDM> potentialModels; 
+    for (float d : rangeD) {
+        for (float sigma : rangeSigma) {
+            for (float theta : rangeTheta) {
+                aDDM addm = aDDM(d, sigma, theta, barrier);
+                potentialModels.push_back(addm);
+            }
+        }
+    }
+
+    std::function<double(aDDM)> NLLcomputer; 
+    if (computeMethod == "basic") {
+        NLLcomputer = [trials](aDDM addm) -> double {
+            double NLL = 0; 
+            for (aDDMTrial trial : trials) {
+                NLL += -log(addm.getTrialLikelihood(trial));
+            }
+            return NLL; 
+        };
+    }
+    else if (computeMethod == "thread") {
+        NLLcomputer = [trials](aDDM addm) -> double {
+            return addm.computeParallelNLL(trials);
+        };
+    }
+    else if (computeMethod == "gpu") {
+        NLLcomputer = [trials](aDDM addm) -> double {
+            return addm.computeGPUNLL(trials);
+        };
+    }
+
+    double minNLL = __DBL_MAX__; 
+    aDDM optimal = aDDM(); 
+    for (aDDM addm : potentialModels) {
+        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << std::endl; 
+        double NLL = NLLcomputer(addm);
+        if (NLL < minNLL) {
+            minNLL = NLL; 
+            optimal = addm; 
+        }
+    }
+    return optimal; 
+
+}
 

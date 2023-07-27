@@ -31,7 +31,7 @@ mle:
 	$(CXX) $(CXXFLAGS) src/addm_mle_thread.cpp $(CXXLIBS) $(LIB) $(INC) -o $(BUILD_DIR)/addm_mle_thread
 
 tests:
-	$(NVCC) $(NVCCFLAGS) src/test.cpp $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/test
+	$(NVCC) $(NVCCFLAGS) src/test_mle_method.cpp $(CXXLIBS) $(CUDALIBS) $(LIB) $(INC) -o $(BUILD_DIR)/test
 
 all: sim nll mle tests
 

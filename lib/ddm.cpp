@@ -1,5 +1,7 @@
 #include <stdexcept>
+#include <functional> 
 #include <iostream>
+#include <chrono> 
 #include <cstddef>
 #include <string> 
 #include <random>

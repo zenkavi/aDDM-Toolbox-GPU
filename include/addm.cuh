@@ -71,6 +71,8 @@ class aDDM: public DDM {
         unsigned int nonDecisionTime=0, float bias=0
     );
 
+    aDDM() {}
+
     /**
      * @brief Compute the likelihood of the data for a single trial given aDDM Parameters.
      * 
@@ -102,6 +104,8 @@ class aDDM: public DDM {
     double computeParallelNLL(std::vector<aDDMTrial> trials, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
     double computeGPUNLL(std::vector<aDDMTrial> trials, bool debug=false, int trialsPerThread=10, int timeStep=10, float approxStateStep=0.1);
+
+    static aDDM fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod="basic");
 };
 
 

@@ -5,7 +5,6 @@
 #include "../include/cuda_util.cuh"
 
 
-
 __global__
 void getTrialLikelihoodKernel(
     bool debug, 
@@ -357,5 +356,158 @@ double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int trialsPe
     }
 
     return NLL;
+}
 
+std::function<double(DDM)> DDM::getNLLComputer(std::vector<DDMTrial> trials, std::string computeMethod) {
+    std::function<double(DDM)> NLLcomputer; 
+    if (computeMethod == "basic") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            double NLL = 0; 
+            for (DDMTrial trial : trials) {
+                NLL += -log(ddm.getTrialLikelihood(trial));
+            }
+            return NLL;
+        };
+    } 
+    else if (computeMethod == "thread") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            return ddm.computeParallelNLL(trials);
+        };
+    } 
+    else if (computeMethod == "gpu") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            return ddm.computeGPUNLL(trials);
+        };
+    }    
+    return NLLcomputer;
+}
+
+DDM DDM::fitModelBasic(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod) {
+    if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
+        throw std::invalid_argument("Input computeMethod is invalid.");
+    } 
+    sort(rangeD.begin(), rangeD.end());
+    sort(rangeSigma.begin(), rangeSigma.end());
+
+    std::vector<DDM> potentialModels; 
+    for (float d : rangeD) {
+        for (float sigma : rangeSigma) {
+            DDM ddm = DDM(d, sigma, barrier);
+            potentialModels.push_back(ddm);
+        }
+    }
+
+    std::function<double(DDM)> NLLcomputer; 
+    if (computeMethod == "basic") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            double NLL = 0; 
+            for (DDMTrial trial : trials) {
+                NLL += -log(ddm.getTrialLikelihood(trial));
+            }
+            return NLL;
+        };
+    } 
+    else if (computeMethod == "thread") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            return ddm.computeParallelNLL(trials);
+        };
+    } 
+    else if (computeMethod == "gpu") {
+        NLLcomputer = [trials](DDM ddm) -> double {
+            return ddm.computeGPUNLL(trials);
+        };
+    }   
+    
+    double minNLL = __DBL_MAX__;
+    DDM optimal = DDM(); 
+    for (DDM ddm : potentialModels) {
+        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << std::endl; 
+        double NLL = NLLcomputer(ddm);
+        if (NLL < minNLL) {
+            minNLL = NLL; 
+            optimal = ddm; 
+        }
+    }
+    return optimal; 
+}
+
+DDM DDM::fitModelOptimized(std::vector<DDMTrial> trials, float startD, float startSigma, float deltaD, float deltaSigma, float barrier, float tolerance, std::string computeMethod, std::string optimizer) {
+    if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
+        throw std::invalid_argument("Input computeMethod is invalid.");
+    } 
+
+    std::function<double(DDM)> NLLComputer = DDM::getNLLComputer(trials, computeMethod);
+
+    DDM base = DDM(startD, startSigma, barrier);
+    while (true) {;
+        double baseNLL = NLLComputer(base);
+        std::cout << "base: d=" << base.d << " sigma=" << base.sigma << " [NLL " << baseNLL << "]" << std::endl; 
+
+        while (startSigma - deltaSigma <= 0) {
+            deltaSigma *= 0.9; 
+        }
+        DDM alt1 = DDM(startD, startSigma - deltaSigma, barrier);
+        DDM alt2 = DDM(startD, startSigma + deltaSigma, barrier);
+        double minNLL; 
+        double NLLalt1 = NLLComputer(alt1);
+        std::cout << "alt1: d=" << alt1.d << " sigma=" << alt1.sigma << " [NLL " << NLLalt1 << "]" << std::endl; 
+        double NLLalt2 = NLLComputer(alt2); 
+        std::cout << "alt2: d=" << alt2.d << " sigma=" << alt2.sigma << " [NLL " << NLLalt2 << "]" << std::endl; 
+        float newSigma;
+        if (NLLalt1 < NLLalt2) {
+            newSigma = startSigma - deltaSigma; 
+        } else {
+            newSigma = startSigma + deltaSigma; 
+        }
+
+        while (startD - deltaD <= 0) {
+            deltaD  *= 0.9; 
+        }
+        DDM alt3 = DDM(startD - deltaD, newSigma, barrier);
+        DDM alt4 = DDM(startD + deltaD, newSigma, barrier);
+        double NLLalt3 = NLLComputer(alt3); 
+        std::cout << "alt3: d=" << alt3.d << " sigma=" << alt3.sigma << " [NLL " << NLLalt3 << "]" << std::endl; 
+        double NLLalt4 = NLLComputer(alt4);
+        std::cout << "alt4: d=" << alt4.d << " sigma=" << alt4.sigma << " [NLL " << NLLalt4 << "]" << std::endl; 
+        float newD;
+        if (NLLalt3 < NLLalt4) {
+            minNLL = NLLalt3; 
+            newD = startD - deltaD; 
+        } else {
+            minNLL = NLLalt4; 
+            newD = startD + deltaD; 
+        }
+
+        if (baseNLL < NLLalt1 && baseNLL < NLLalt2 && baseNLL < NLLalt3 && baseNLL < NLLalt4) {
+            break; 
+        }
+
+        float changeVecX = newD - startD; 
+        float changeVecY = newSigma - startSigma; 
+        DDM next = DDM(newD + changeVecX, newSigma + changeVecY, barrier);
+        double nextVectorSeqNLL = NLLComputer(next);
+        std::cout << "next: d=" << next.d << " sigma=" << next.sigma << " [NLL " << nextVectorSeqNLL << "]" << std::endl; 
+        while (nextVectorSeqNLL < minNLL) {
+            while (newD + changeVecX <= 0) {
+                changeVecX *= 0.9; 
+            }
+            newD += changeVecX; 
+            while (newSigma + changeVecY <= 0) {
+                changeVecY *= 0.9; 
+            }
+            newSigma += changeVecY; 
+            minNLL = nextVectorSeqNLL; 
+            DDM next = DDM(newD + changeVecX, newSigma + changeVecY, barrier);
+            double nextVectorSeqNLL = NLLComputer(next);
+            std::cout << "next: d=" << next.d << " sigma=" << next.sigma << " [NLL " << nextVectorSeqNLL << "]" << std::endl; 
+        }
+
+        startD = newD; 
+        startSigma = newSigma; 
+        deltaD *= 0.5;  
+        deltaSigma *= 0.5; 
+        base = DDM(startD, startSigma, barrier);
+    }
+
+    return base; 
 }

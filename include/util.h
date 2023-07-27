@@ -5,14 +5,12 @@
 #include <map>
 #include <string>
 #include "addm.cuh"
-
-// #ifndef __NVCC__
 #include "bshoshany/BS_thread_pool.hpp"
-// #endif
 
 extern float SEED;
 extern float DECAY;
 extern vector<string> validFixDistTypes;
+extern vector<string> validComputeMethods;
 
 struct EXPEntry {
     int parcode;

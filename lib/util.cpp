@@ -20,6 +20,7 @@ using json = nlohmann::json;
 float SEED = 100;
 float DECAY = 0;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
+vector<string> validComputeMethods = {"basic", "thread", "gpu"};
 
 
 double probabilityDensityFunction(float mean, float sigma, float x) {
