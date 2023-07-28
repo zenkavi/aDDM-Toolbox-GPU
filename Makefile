@@ -62,7 +62,7 @@ mle: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 
 
 tests: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(NVCC) $(NVCCFLAGS) -c src/test.cpp $(LIB) $(INC) -o $(OBJ_DIR)/test.o
+	$(NVCC) $(NVCCFLAGS) -c src/test_mle_method.cpp $(LIB) $(INC) -o $(OBJ_DIR)/test.o
 	$(NVCC) $(OBJ_DIR)/test.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/test
 
 

@@ -307,6 +307,9 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             likelihood = probDownCrossing[probDownCrossing.size() - 1];
         }
     }
+    if (likelihood == 0) {
+        likelihood = pow(10, -20);
+    }
     return likelihood;
 }
 

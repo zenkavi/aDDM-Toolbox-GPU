@@ -11,17 +11,6 @@
 #include "util.h"
 #include "ddm.cuh"
 
-#ifdef IGNORE_SPACE_CONSTRAINTS
-    bool restrictSpace = false; 
-#else 
-    bool restrictSpace = true; 
-#endif 
-
-#ifdef USE_GPU
-    bool useGPU = true; 
-#else
-    bool useGPU = false; 
-#endif 
 
 DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->RT = RT;
@@ -175,8 +164,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         // Only necessary when: 
         //     -mean of the normal distribution has changed
         //     -first timestep 
-        //     -restricting space
-        if (recomputePDCM || time == 1 || restrictSpace) {
+        if (recomputePDCM || time == 1) {
             for (size_t i = 0; i < states.size(); i++) {
                 for (size_t j = 0; j < states.size(); j++) {
                     float x = changeMatrix[i][j];
@@ -310,6 +298,9 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
     }    
     assert(likelihood < 1);
+    if (likelihood == 0) {
+        likelihood = pow(10, -20);
+    }
     return likelihood;
 }
 

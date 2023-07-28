@@ -246,7 +246,10 @@ void getTrialLikelihoodKernel(
             delete[] prStatesNew;
             delete[] changeUpCDFs;
             delete[] changeDownCDFs;
-            
+
+            if (likelihood == 0) {
+                likelihood = pow(10, -20);
+            }   
             likelihoods[trialNum] = -log(likelihood);            
         }
     }

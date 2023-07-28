@@ -37,9 +37,9 @@ int main() {
     file.close();
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
 
-    // DDM optimal = DDM::fitModelBasic(trials, rangeD, rangeSigma, 1, "gpu");
+    DDM optimal = DDM::fitModelBasic(trials, rangeD, rangeSigma, 1, "gpu");
 
-    DDM optimal = DDM::fitModelOptimized(trials, 0.1, 1, 0.05, 0.5, 1, 1, "gpu");
+    // DDM optimal = DDM::fitModelOptimized(trials, 0.1, 1, 0.05, 0.5, 1, 1, "gpu");
 
     std::cout << optimal.d << std::endl; 
     std::cout << optimal.sigma << std::endl; 

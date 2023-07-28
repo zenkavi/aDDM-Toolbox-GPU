@@ -240,7 +240,10 @@ void getTrialLikelihoodKernel(
             delete[] prStatesNew;
             delete[] changeUpCDFs;
             delete[] changeDownCDFs;
-            
+
+            if (likelihood == 0) {
+                likelihood = pow(10, -20);
+            }            
             likelihoods[trialNum] = -log(likelihood);
         }
     }    
@@ -421,8 +424,8 @@ DDM DDM::fitModelBasic(std::vector<DDMTrial> trials, std::vector<float> rangeD, 
     double minNLL = __DBL_MAX__;
     DDM optimal = DDM(); 
     for (DDM ddm : potentialModels) {
-        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << std::endl; 
         double NLL = NLLcomputer(ddm);
+        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << " NLL=" << NLL << std::endl; 
         if (NLL < minNLL) {
             minNLL = NLL; 
             optimal = ddm; 
