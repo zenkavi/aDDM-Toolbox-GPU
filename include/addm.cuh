@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <tuple>
 #include "ddm.cuh"
 
 using namespace std;
@@ -26,23 +27,62 @@ class FixationData {
         );
     };
 
+/**
+ * @brief Implementation of a single aDDMTrial object. 
+ * 
+ * ADD MORE DOCUMENTATION. 
+ *  
+ */
 class aDDMTrial: public DDMTrial {
     private:
     public:
-        vector<int> fixItem;
-        vector<int> fixTime;
-        vector<float> fixRDV;
-        float uninterruptedLastFixTime;
-        std::vector<float>RDVs;
+        vector<int> fixItem; /**< Vector of integers representing the items fixated on during the 
+            trial in chronological order. 1 corresponds to left, 2 corresponds to right, and any
+            other value is considered a fixation or blank fixation. */
+        vector<int> fixTime; /**< Vector of integers corresponding to the duration of each 
+            fixation. */
+        vector<float> fixRDV; /**< Vector of floats corresponding to the RDV values at the end of
+            each fixation. */
+        float uninterruptedLastFixTime; /**< Integer corresponding to the duration (milliseconds) 
+            that the last fixation in the trial would have if it had not been terminated when a 
+            decision had been made. */
 
+        /**
+         * @brief Construct a new aDDM Trial object.
+         * 
+         * @param RT Response time in milliseconds. 
+         * @param choice Either -1 (for left item) or +1 (for right item).
+         * @param valueLeft Value of the left item. 
+         * @param valueRight Value of the right item. 
+         * @param fixItem Vector of integers representing the items fixated on during the trial in
+         * chronological order. 1 corresponds to left, 2 corresponds to right, and any other value
+         * is considered a transition or blank fixation. 
+         * @param fixTime Vector of integers corresponding to the duration of each fixation. Must 
+         * be equal in size to fixItem. 
+         * @param fixRDV Vector of floats corresopnding to the RDV values at the end of each 
+         * fixation. 
+         * @param uninterruptedLastFixTime Integer corresponding to the duration (milliseconds) 
+         * that the last fixation in the trial would have if it had not been terminated when a 
+         * decision had been made. 
+         */
         aDDMTrial(
             unsigned int RT, int choice, int valueLeft, int valueRight, 
             vector<int> fixItem={}, vector<int> fixTime={}, 
             vector<float> fixRDV={}, float uninterruptedLastFixTime=0);
 
+        /**
+         * @brief Construct an empty aDDMTrial object. 
+         * 
+         */
         aDDMTrial() {};
 };
 
+/**
+ * @brief Implementation of the attentional Drift Diffusion Model (aDDM). 
+ * 
+ * ADD MORE DETAILED DESCRIPTION HERE
+ * 
+ */
 class aDDM: public DDM {
     private:
         void callGetTrialLikelihoodKernel(
@@ -52,8 +92,9 @@ class aDDM: public DDM {
             int nonDecisionTime, int timeStep, float approxStateStep, float decay);
 
     public: 
-        float theta;
-
+        float theta; /**< Float between 0 and 1, parameter of the model which 
+            controls the attentional bias.*/
+        
     /**
      * @brief Construct a new aDDM object.
      * 
@@ -78,12 +119,13 @@ class aDDM: public DDM {
     aDDM() {}
 
     /**
-     * @brief Compute the likelihood of the data for a single trial given aDDM Parameters.
+     * @brief Compute the likelihood of the trial results provided the current parameters.
      * 
      * @param trial aDDMTrial object.
-     * @param debug True if state variables should be printed for debugging purposes
-     * @param timeStep value in milliseconds used for binning the time axis.
-     * @param approxstateStep used for binning the RDV axis.
+     * @param debug Boolean sepcifying if state variables should be printed for debugging
+     * purposes.
+     * @param timeStep Value in milliseconds used for binning the time axis.
+     * @param approxstateStep Used for binning the RDV axis.
      * @return double representing the likelihood for the given trial. 
      */
     double getTrialLikelihood(aDDMTrial trial, bool debug=false, 
@@ -97,9 +139,9 @@ class aDDM: public DDM {
      * @param fixationData instance of a FixationData object containing empirical fixation data
      * @param timeStep value of in milliseconds used for binning time axis. 
      * @param numFixDists number of expected fixations in a given trial 
-     * @param fixationDist distribution of the fixation data being used
-     * @param timeBins predetermined time bins as used in the fixationDist
-     * @return aDDMTrial resulting from the simulation
+     * @param fixationDist distribution of the fixation data being used. 
+     * @param timeBins predetermined time bins as used in the fixationDist. 
+     * @return aDDMTrial resulting from the simulation. 
      */
     aDDMTrial simulateTrial(
         int valueLeft, int valueRight, FixationData fixationData, int timeStep=10, 
@@ -113,7 +155,7 @@ class aDDM: public DDM {
      * 
      * @param trials Vector of aDDMTrials that the model should calculcate the NLL for. 
      * @param debug Boolean specifying if state variables should be printed for debugging purposes.
-     * @param timeStep Value of in milliseconds used for binning time axis. 
+     * @param timeStep Value in milliseconds used for binning the time axis. 
      * @param approxStateStep Used for binning the RDV axis.
      * @return double representing the sum of negative log likelihoods for each trial. 
      */
@@ -130,7 +172,7 @@ class aDDM: public DDM {
      * @param debug Boolean specifying if state variables should be printed for debugging purposes.
      * @param trialsPerThread Number of trials that each thread should be designated to compute. 
      * Must be divisible by the total number of trials. 
-     * @param timeStep Value of in milliseconds used for binning time axis. 
+     * @param timeStep Value in milliseconds used for binning the time axis. 
      * @param approxStateStep Used for binning the RDV axis.
      * @return double representing the sum of negative log likelihoods for each trial. 
      */
@@ -147,16 +189,16 @@ class aDDM: public DDM {
      * 
      * @param trials Vector of aDDMTrials that each model should calculate the NLL for. 
      * @param rangeD Vector of floats representing possible values of d to test for. 
-     * @param rangeSigma vector of floats representing possible values of sigma to test for. 
-     * @param rangeTheta Vector of floats representing possibel values of theta to test for. 
-     * @param barrier Positive magnitude of the signal thresholds.
-     * @param computeMethod Computation method to calculate the NLL for each possible models. 
-     * Allowed values are {basic, thread, gpu}. "basic" will compute each trial likelihood in
-     * parallel and compute the NLL as the sum of all negative log likelihoods. "thread" will
+     * @param rangeSigma Vector of floats representing possible values of sigma to test for. 
+     * @param rangeTheta Vector of floats representing possible values of theta to test for. 
+     * @param barrier Positive magnitude of the signal threshold. 
+     * @param computeMethod Computation method to calculate the NLL for each possible model. 
+     * Allowed values are {basic, thread, gpu}. "basic" will compute each trial likelihood 
+     * sequentially and compute the NLL as the sum of all negative log likelihoods. "thread" will
      * use a thread pool to divide all trials into the maximum number of CPU threads and compute
-     * the NLL of each block in parallel. "gpu" will call of CUDA kernel to compute the likelihood
+     * the NLL of each block in parallel. "gpu" will call a CUDA kernel to compute the likelihood
      * of each trial in parallel on the GPU. 
-     * @return aDDM representing the most optimal model with the lowest total NLL value. 
+     * @return 
      */
     static aDDM fitModelMLE(
         vector<aDDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 

@@ -1,6 +1,12 @@
 NVCC := /usr/local/cuda-12.2/bin/nvcc
 CXX := g++
 
+SIM_EXECS := addm_simulate ddm_simulate
+NLL_EXECS := addm_nll_thread addm_nll ddm_nll_thread ddm_nll
+MLE_EXECS := addm_mle_thread addm_mle ddm_mle_thread ddm_mle
+TEST_EXECS := test test_mle_method
+GPU_EXECS := addm_nll_gpu ddm_nll_gpu
+
 CXXFLAGS := -Ofast -msse4.2 -march=native -fPIC -c
 NVCCFLAGS := -O3 -Xcompiler -fPIC -c
 SHAREDFLAGS = -I include -lpthread
@@ -12,6 +18,7 @@ LIB_DIR := lib
 OBJ_DIR := obj
 INC_DIR := include
 BUILD_DIR := bin
+SRC_DIR := src
 INSTALL_LIB_DIR := /usr/lib
 INSTALL_INC_DIR := /usr/include
 
@@ -28,50 +35,34 @@ $(OBJ_DIR)/%.o: $(LIB_DIR)/%.cpp
 $(OBJ_DIR)/%.o: $(LIB_DIR)/%.cu
 	$(NVCC) $(NVCCFLAGS) $(SHAREDFLAGS) -o $@ $<
 
+define compile_target_cpp
+	$(CXX) $(CXXFLAGS) $(addprefix $(SRC_DIR)/, $1.cpp) $(LIB) $(INC) -o $(addprefix $(OBJ_DIR)/, $1.o)
+	$(NVCC) $(addprefix $(OBJ_DIR)/, $1.o) $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(addprefix $(BUILD_DIR)/, $1)
+endef
+
+define compile_target_cu
+	$(NVCC) $(NVCCFLAGS) $(addprefix $(SRC_DIR)/, $1.cu) $(LIB) $(INC) -o $(addprefix $(OBJ_DIR)/, $1.o)
+	$(NVCC) $(addprefix $(OBJ_DIR)/, $1.o) $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(addprefix $(BUILD_DIR)/, $1)
+endef
 
 sim: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(CXX) $(CXXFLAGS) -c src/ddm_simulate.cpp $(LIB) $(INC) -o $(OBJ_DIR)/ddm_sim.o
-	$(CXX) $(CXXFLAGS) -c src/addm_simulate.cpp $(LIB) $(INC) -o $(OBJ_DIR)/addm_sim.o
-
-	$(NVCC) $(OBJ_DIR)/ddm_sim.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_sim
-	$(NVCC) $(OBJ_DIR)/addm_sim.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_sim
+	$(foreach source, $(SIM_EXECS), $(call compile_target_cpp, $(source));)
 
 
 nll: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(CXX) $(CXXFLAGS) -c src/ddm_nll.cpp $(LIB) $(INC) -o $(OBJ_DIR)/ddm_nll.o
-	$(CXX) $(CXXFLAGS) -c src/addm_nll.cpp $(LIB) $(INC) -o $(OBJ_DIR)/addm_nll.o
-	$(CXX) $(CXXFLAGS) -c src/ddm_nll_thread.cpp $(LIB) $(INC) -o $(OBJ_DIR)/ddm_nll_thread.o
-	$(CXX) $(CXXFLAGS) -c src/addm_nll_thread.cpp $(LIB) $(INC) -o $(OBJ_DIR)/addm_nll_thread.o
-
-	$(NVCC) $(OBJ_DIR)/ddm_nll.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_nll
-	$(NVCC) $(OBJ_DIR)/addm_nll.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_nll
-	$(NVCC) $(OBJ_DIR)/ddm_nll_thread.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_nll_thread
-	$(NVCC) $(OBJ_DIR)/addm_nll_thread.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_nll_thread
+	$(foreach source, $(NLL_EXECS), $(call compile_target_cpp, $(source));)
 
 
 mle: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(CXX) $(CXXFLAGS) -c src/ddm_mle.cpp $(LIB) $(INC) -o $(OBJ_DIR)/ddm_mle.o
-	$(CXX) $(CXXFLAGS) -c src/addm_mle.cpp $(LIB) $(INC) -o $(OBJ_DIR)/addm_mle.o
-	$(CXX) $(CXXFLAGS) -c src/ddm_mle_thread.cpp $(LIB) $(INC) -o $(OBJ_DIR)/ddm_mle_thread.o
-	$(CXX) $(CXXFLAGS) -c src/addm_mle_thread.cpp $(LIB) $(INC) -o $(OBJ_DIR)/addm_mle_thread.o
-
-	$(NVCC) $(OBJ_DIR)/ddm_mle.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_mle
-	$(NVCC) $(OBJ_DIR)/addm_mle.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_mle
-	$(NVCC) $(OBJ_DIR)/ddm_mle_thread.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_mle_thread
-	$(NVCC) $(OBJ_DIR)/addm_mle_thread.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_mle_thread
+	$(foreach source, $(MLE_EXECS), $(call compile_target_cpp, $(source));)
 
 
 tests: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(NVCC) $(NVCCFLAGS) -c src/test_mle_method.cpp $(LIB) $(INC) -o $(OBJ_DIR)/test.o
-	$(NVCC) $(OBJ_DIR)/test.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/test
+	$(foreach source, $(MLE_EXECS), $(call compile_target_cpp, $(source));)
 
 
 gpu: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(NVCC) $(NVCCFLAGS) -c src/ddm_nll_gpu.cu $(LIB) $(INC) -o $(OBJ_DIR)/ddm_nll_gpu.o
-	$(NVCC) $(NVCCFLAGS) -c src/addm_nll_gpu.cu $(LIB) $(INC) -o $(OBJ_DIR)/addm_nll_gpu.o
-
-	$(NVCC) $(OBJ_DIR)/ddm_nll_gpu.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/ddm_nll_gpu
-	$(NVCC) $(OBJ_DIR)/addm_nll_gpu.o $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(BUILD_DIR)/addm_nll_gpu
+	$(foreach source, $(GPU_EXECS), $(call compile_target_cu, $(source));)
 
 
 all: sim nll mle tests gpu

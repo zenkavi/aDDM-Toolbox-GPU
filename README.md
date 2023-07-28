@@ -43,5 +43,9 @@ sigma: 0.07
 theta: 0.5
 ```
 
+## Useful Functions ##
+
+The following methods are useful for data simulation and 
+
 
 
