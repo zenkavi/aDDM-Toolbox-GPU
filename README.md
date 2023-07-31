@@ -109,7 +109,7 @@ int valueLeft = 3;
 int valueRight = 7; 
 
 int main() {
-    std::map<int, std::vector<aDDMTrial>> data = loadDataFromSingleCSV("data/addm_sims.csv");
+    map<int, vector<aDDMTrial>> data = loadDataFromSingleCSV("data/addm_sims.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
 
     vector<DDMTrial> trials(N);
@@ -135,7 +135,7 @@ int valueLeft = 3;
 int valueRight = 7; 
 
 int main() {
-    std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
+    map<int, vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
 
     vector<DDMTrial> trials(N);
