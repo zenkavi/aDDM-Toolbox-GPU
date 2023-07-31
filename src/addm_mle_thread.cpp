@@ -2,11 +2,7 @@
 #include <vector> 
 #include <random>
 #include <ctime>
-#include <fstream>
-#include <sstream>
-#include "../include/addm.cuh"
-#include "../include/ddm.cuh"
-#include "../include/util.h"
+#include <addm/gpu_toolbox.cuh>
 
 
 using namespace std::chrono;

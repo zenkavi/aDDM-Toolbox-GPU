@@ -54,14 +54,14 @@ theta: 0.5
 
 ## Examples ##
 
-For any data simulation and model fitting, the DDM and aDDM classes are going to be the most useful. The `addm.cuh` amd `ddm.cuh` files can be found in the include directory. Below are some examples that may give you an idea how to use these classes. Besides these examples, you may want to 
+For any data simulation and model fitting, the DDM and aDDM classes are going to be the most useful. The `addm.cuh` amd `ddm.cuh` files can be found in the include directory. Below are some examples that may give you an idea how to use these classes. Besides these examples, you may want to:
 
 * Check out the [documentation](https://jakegoldm.github.io/aDDM-Toolbox-GPU/).
 * See example use cases in the [source directory](src/)
 
-### Simulate N-Trials ###
+### N-Trial Simulation ###
 
-Both the `ddm` and `addm` classes provide methods for simulating mass amounts of trials. 
+Both the `ddm` and `addm` classes provide methods for simulating mass amounts of trials. This can be done using the `simulateTrial` method defined in both classes: 
 
 #### DDM ####
 ```C++
@@ -85,7 +85,44 @@ int main() {
 }
 ```
 
-Note that for generating aDDM trials, an existing set of empirical fixations is required. This data should be input in the form of two CSVs, with the first CSV containing experimental data and the second CSV containing fixation data. Sample CSV files in an acceptable format can be found in the data directory. 
+#### aDDM #####
+
+Note that for generating aDDM trials, an existing set of empirical fixations is required. This data can be packaged in the form of 1-2 CSVs. The input format for a single CSV is identical to the output of `aDDMTrial::writeTrialsToCSV(...)`. This CSV should be formatted as follows: 
+
+|  ID 	|choice |   RT	|  valueLeft 	|  valueRight 	|  fixItem 	|  fixTime 	|
+|:-:	|:-:	|:-:	|:-:	        |:-:	        |:-:	    |:-:	    |
+|   0	|  1 	|  350 	|   3	        |   0           |   0	    |   200	    |
+|   0	|   1	|  350 	|   3	        |   0	        |   1	    |   150	    |
+|   1	|   -1	|  400 	|   4	        |  5            |   0	    |   300	    |
+|   1	|   -1	|  400 	|   4	        |   5	        |   2	    |   100	    |
+
+To load data using the single-CSV format: 
+
+```C++
+#include <addm/gpu_toolbox.cuh>
+#include <vector>
+
+using namespace std; 
+
+int N = 1000; 
+int valueLeft = 3; 
+int valueRight = 7; 
+
+int main() {
+    std::map<int, std::vector<aDDMTrial>> data = loadDataFromSingleCSV("data/addm_sims.csv");
+    FixationData fixationData = getEmpiricalDistributions(data);
+
+    vector<DDMTrial> trials(N);
+    aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
+
+    for (int i = 0; i < N; i++) {
+        aDDMTrial trial = addm.simulateTrial(valueLeft, valueRight, fixationData);
+        trials.push_back(trial);
+    }
+}
+```
+
+In the case of using two CSVs, such as with real experimental data, the first CSV should contain the experimental data including subject parcode, trial ID, RT, choice, and item values. The second CSV should contain fixation data pertaining to each trial. Sample CSV files in an acceptable format can be found in the data directory. To load data using the two-CSV format: 
 
 ```C++
 #include <addm/gpu_toolbox.cuh>
@@ -100,15 +137,13 @@ int valueRight = 7;
 int main() {
     std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
+
+    vector<DDMTrial> trials(N);
     aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
 
     for (int i = 0; i < N; i++) {
         aDDMTrial trial = addm.simulateTrial(valueLeft, valueRight, fixationData);
+        trials.push_back(trial);
     }
 }
 ```
-
-
-
-
-

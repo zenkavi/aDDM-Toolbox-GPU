@@ -1,12 +1,6 @@
 #include <iostream>
 #include <vector> 
-#include <random>
-#include <ctime>
-#include <fstream>
-#include <sstream>
-#include "../include/addm.cuh"
-#include "../include/ddm.cuh"
-#include "../include/util.h"
+#include <addm/gpu_toolbox.cuh>
 
 float d = 0.005;
 float sigma = 0.07;

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <addm/gpu_toolbox.cuh>
 
+
 using namespace std::chrono;
 
 int N = 1000;
@@ -136,13 +137,13 @@ void testDDMtimeSpeedup() {
 int main() {
     srand(time(NULL));
     
-    // fp.open("results/test_addm.csv");
-    // fp << "test,correctness,time\n";
+    fp.open("results/test_addm.csv");
+    fp << "test,correctness,time\n";
 
-    // std::cout << "reading data..." << std::endl;
-    // std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
-    // FixationData fixationData = getEmpiricalDistributions(data);
-    // testMLEfullGrid(fixationData);
+    std::cout << "reading data..." << std::endl;
+    std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
+    FixationData fixationData = getEmpiricalDistributions(data);
+    testMLEfullGrid(fixationData);
 
     fp.close();
     fp.open("results/test_ddm.csv");
