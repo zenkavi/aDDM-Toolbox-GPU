@@ -361,7 +361,7 @@ double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int trialsPe
     return NLL;
 }
 
-DDM DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod) {
+MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod) {
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
     } 
@@ -398,14 +398,23 @@ DDM DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, st
     }   
     
     double minNLL = __DBL_MAX__;
+    double totalNLL = 0; 
+    std::map<DDM, float> posteriors; 
     DDM optimal = DDM(); 
     for (DDM ddm : potentialModels) {
         double NLL = NLLcomputer(ddm);
+        posteriors.insert({ddm, NLL});
         std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << " NLL=" << NLL << std::endl; 
+        totalNLL += NLL; 
         if (NLL < minNLL) {
             minNLL = NLL; 
             optimal = ddm; 
         }
     }
-    return optimal; 
+
+    for (auto &i : posteriors) i.second *= 1 / totalNLL; 
+    MLEinfo<DDM> info;
+    info.optimal = optimal; 
+    info.posteriors = posteriors; 
+    return info;   
 }

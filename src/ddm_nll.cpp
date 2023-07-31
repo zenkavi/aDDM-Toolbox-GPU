@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include "ddm.cuh"
+#include "../include/ddm.cuh"
 #include "util.h"
 
 float d = 0.005;
@@ -16,28 +16,8 @@ int valueLeft = 3;
 using namespace std::chrono;
 
 int main() {
-    std::vector<DDMTrial> trials; 
-    std::ifstream file("results/ddm_simulations.csv");
-    std::string line;
-    std::getline(file, line);
-    int choice; 
-    int RT; 
-    int valDiff;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string field;
-        std::getline(ss, field, ',');
-        choice = std::stoi(field);
-        std::getline(ss, field, ',');
-        RT = std::stoi(field);
-        std::getline(ss, field, ',');
-        valDiff = std::stoi(field);
-        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueLeft - valDiff);
-        trials.push_back(dt);
-    }
-    file.close();
-    std::cout << "Counted " << trials.size() << " trials." << std::endl;
-
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv");
+    std::cout << "counted " << trials.size() << std::endl;
     DDM ddm = DDM(d, sigma, barrier);
 
     std::ofstream fp;

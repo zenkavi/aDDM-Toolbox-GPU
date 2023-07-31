@@ -43,19 +43,5 @@ int main() {
     }
 
     std::cout << "printing outputs..." << std::endl;
-    std::ofstream fp;
-    fp.open("results/addm_simulations.csv");
-    fp << "ID,choice,RT,valDiff,fixItem,fixTime\n";
-    int id = 0; 
-    for (aDDMTrial adt : outputs) {
-        assert(adt.fixItem.size() == adt.fixTime.size());
-        for (int i = 0; i < adt.fixItem.size(); i++) {
-            fp << id << "," << adt.choice << "," << adt.RT << "," << 
-                adt.valueLeft - adt.valueRight << "," << 
-                adt.fixItem[i] << "," << adt.fixTime[i] << "\n";
-        }
-        id++;
-    }
-    fp.close();
-
+    aDDMTrial::writeTrialsToCSV(outputs, "results/addm_simulations.csv");
 }

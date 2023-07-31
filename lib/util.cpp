@@ -10,7 +10,6 @@
 #include <functional>
 #include <vector> 
 #include <boost/math/distributions/normal.hpp>
-#include "bshoshany/BS_thread_pool.hpp"
 #include "nlohmann/json.hpp"
 #include "util.h"
 #include "addm.cuh"

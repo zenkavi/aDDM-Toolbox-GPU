@@ -442,7 +442,7 @@ double aDDM::computeGPUNLL(std::vector<aDDMTrial> trials, bool debug, int trials
     return NLL;
 }
 
-aDDM aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod) {
+MLEinfo<aDDM> aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod) {
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
     }
@@ -479,16 +479,24 @@ aDDM aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD,
     }
 
     double minNLL = __DBL_MAX__; 
+    double totalNLL = 0; 
+    std::map<aDDM, float> posteriors; 
     aDDM optimal = aDDM(); 
     for (aDDM addm : potentialModels) {
-        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << std::endl; 
         double NLL = NLLcomputer(addm);
+        posteriors.insert({addm, NLL});
+        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << " NLL=" << NLL << std::endl; 
+        totalNLL += NLL; 
         if (NLL < minNLL) {
             minNLL = NLL; 
             optimal = addm; 
         }
     }
-    return optimal; 
 
+    for (auto &i : posteriors) i.second *= 1 / totalNLL; 
+    MLEinfo<aDDM> info;
+    info.optimal = optimal; 
+    info.posteriors = posteriors; 
+    return info;   
 }
 

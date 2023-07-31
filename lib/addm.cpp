@@ -327,7 +327,6 @@ aDDMTrial aDDM::simulateTrial(
     std::vector<float> fixRDV;
 
     std::random_device rd;
-    // std::mt19937 gen(SEED);
     std::mt19937 gen(rd()); 
 
     float RDV = this->bias;
@@ -343,7 +342,6 @@ aDDMTrial aDDM::simulateTrial(
     int latency = fixationData.latencies.at(rIDX);
     int remainingNDT = this->nonDecisionTime - latency;
 
-    // std::mt19937 gen(SEED);
 
     for (int t = 0; t < latency / timeStep; t++) {
         std::normal_distribution<float> ndist(0, this->sigma);
@@ -516,4 +514,80 @@ double aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool debug, int t
         NLL += t; 
     }
     return NLL;
+}
+
+void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename) {
+    std::ofstream fp;
+    fp.open(filename);
+    fp << "ID,choice,RT,valueLeft,valueRight,fixItem,fixTime\n";
+    int id = 0; 
+
+    for (aDDMTrial adt : trials) {
+        assert(adt.fixItem.size() == adt.fixTime.size());
+        for (int i = 0; i < adt.fixItem.size(); i++) {
+            fp << id << "," << adt.choice << "," << adt.RT << "," << 
+                adt.valueLeft << "," << adt.valueRight << "," <<
+                adt.fixItem[i] << "," << adt.fixTime[i] << "\n";
+        }
+        id++;
+    }
+    fp.close();    
+}
+
+vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
+    std::vector<aDDMTrial> trials; 
+    std::vector<aDDM> addms;
+    std::ifstream file("results/addm_simulations.csv");
+    std::string line;
+    std::getline(file, line);
+
+    int ID;
+    int choice; 
+    int RT; 
+    int valueLeft;
+    int valueRight;
+    int prevID;
+    int fItem;
+    int fTime; 
+    bool firstIter = true; 
+    std::vector<int> fixItem;
+    std::vector<int> fixTime; 
+
+    aDDMTrial adt = aDDMTrial();
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string field;
+        std::getline(ss, field, ',');
+        ID = std::stoi(field);
+        std::getline(ss, field, ',');
+        choice = std::stoi(field);
+        std::getline(ss, field, ',');
+        RT = std::stoi(field);
+        std::getline(ss, field, ',');
+        valueLeft = std::stoi(field);
+        std::getline(ss, field, ',');
+        valueRight = std::stoi(field);
+        std::getline(ss, field, ',');
+        fItem = std::stoi(field);
+        std::getline(ss, field, ',');
+        fTime = std::stoi(field);
+        if (ID == prevID && !firstIter) {
+            adt.fixItem.push_back(fItem);
+            adt.fixTime.push_back(fTime);
+        } else {
+            if (firstIter) {
+                firstIter = false; 
+            } else {
+                trials.push_back(adt);
+            }
+            adt = aDDMTrial(RT, choice, valueLeft, valueRight);
+            adt.fixItem.push_back(fItem);
+            adt.fixTime.push_back(fTime);
+
+        }
+        prevID = ID;
+    }
+    trials.push_back(adt);
+    file.close();
+    return trials;
 }

@@ -4,7 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "ddm.cuh"
+#include "../include/ddm.cuh"
 #include "util.h"
 
 std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};
@@ -14,29 +14,10 @@ int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
-    std::vector<DDMTrial> trials; 
-    std::vector<DDM> ddms;
-    std::ifstream file("results/ddm_simulations.csv");
-    std::string line;
-    std::getline(file, line);
-    int choice; 
-    int RT; 
-    int valDiff;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string field;
-        std::getline(ss, field, ',');
-        choice = std::stoi(field);
-        std::getline(ss, field, ',');
-        RT = std::stoi(field);
-        std::getline(ss, field, ',');
-        valDiff = std::stoi(field);
-        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueLeft - valDiff);
-        trials.push_back(dt);
-    }
-    file.close();
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv");
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
 
+    std::vector<DDM> ddms; 
     for (float d : rangeD) {
         for (float sigma : rangeSigma) {
             ddms.push_back(DDM(d, sigma, barrier));

@@ -366,3 +366,44 @@ double DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug, int tim
     }
     return NLL;
 }
+
+void DDMTrial::writeTrialsToCSV(std::vector<DDMTrial> trials, std::string filename) {
+    std::ofstream fp;
+    fp.open("results/ddm_simulations.csv");
+    fp << "choice,RT,valueLeft,valueRight\n";
+    for (DDMTrial t : trials) {
+        fp << t.choice << "," << t.RT << "," << t.valueLeft << "," << t.valueRight << "\n";
+    }
+    fp.close();
+
+}
+
+std::vector<DDMTrial> DDMTrial::loadTrialsFromCSV(std::string filename) {
+    std::vector<DDMTrial> trials; 
+    std::ifstream file(filename);
+    std::string line;
+    std::getline(file, line);
+    int choice; 
+    int RT; 
+    int valDiff;
+    int valueLeft; 
+    int valueRight; 
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string field;
+        std::getline(ss, field, ',');
+        choice = std::stoi(field);
+        std::getline(ss, field, ',');
+        RT = std::stoi(field);
+        std::getline(ss, field, ',');
+        valueLeft = std::stoi(field);
+        std::getline(ss, field, ',');
+        valueRight = std::stoi(field);
+        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueRight);
+        trials.push_back(dt);
+    }
+    file.close();
+
+    return trials; 
+}

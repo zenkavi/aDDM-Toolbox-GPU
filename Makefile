@@ -19,6 +19,7 @@ OBJ_DIR := obj
 INC_DIR := include
 BUILD_DIR := bin
 SRC_DIR := src
+
 INSTALL_LIB_DIR := /usr/lib
 INSTALL_INC_DIR := /usr/include
 
@@ -30,7 +31,6 @@ CU_OBJ_FILES := $(patsubst $(LIB_DIR)/%.cu,$(OBJ_DIR)/%.o,$(CU_FILES))
 
 $(OBJ_DIR)/%.o: $(LIB_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(SHAREDFLAGS) -o $@ $<
-
 
 $(OBJ_DIR)/%.o: $(LIB_DIR)/%.cu
 	$(NVCC) $(NVCCFLAGS) $(SHAREDFLAGS) -o $@ $<
@@ -45,6 +45,7 @@ define compile_target_cu
 	$(NVCC) $(addprefix $(OBJ_DIR)/, $1.o) $(CPP_OBJ_FILES) $(CU_OBJ_FILES) -o $(addprefix $(BUILD_DIR)/, $1)
 endef
 
+
 sim: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(SIM_EXECS), $(call compile_target_cpp, $(source));)
 
@@ -52,18 +53,14 @@ sim: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 nll: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(NLL_EXECS), $(call compile_target_cpp, $(source));)
 
-
 mle: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(MLE_EXECS), $(call compile_target_cpp, $(source));)
 
-
 tests: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
-	$(foreach source, $(MLE_EXECS), $(call compile_target_cpp, $(source));)
-
+	$(foreach source, $(TEST_EXECS), $(call compile_target_cpp, $(source));)
 
 gpu: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(GPU_EXECS), $(call compile_target_cu, $(source));)
-
 
 all: sim nll mle tests gpu
 

@@ -18,67 +18,8 @@ int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
-    std::vector<DDMTrial> trials; 
-    std::vector<DDM> ddms;
-    std::ifstream file("results/ddm_simulations.csv");
-    std::string line;
-    std::getline(file, line);
-    int choice; 
-    int RT; 
-    int valDiff;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string field;
-        std::getline(ss, field, ',');
-        choice = std::stoi(field);
-        std::getline(ss, field, ',');
-        RT = std::stoi(field);
-        std::getline(ss, field, ',');
-        valDiff = std::stoi(field);
-        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueLeft - valDiff);
-        trials.push_back(dt);
-    }
-    file.close();
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv"); 
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
-
-    for (float d : rangeD) {
-        for (float sigma : rangeSigma) {
-            ddms.push_back(DDM(d, sigma, barrier));
-        }
-    }
-
-    std::ofstream fp;
-    fp.open("results/ddm_mle.csv");
-    fp << "d,sigma,NLL\n";
-
-    double minNLL = __DBL_MAX__;
-    double minD = 0; 
-    double minSigma = 0; 
-
-    auto start = high_resolution_clock::now();
-
-    for (DDM ddm : ddms) {
-        std::cout << "Testing combination d=" << ddm.d << " sigma=" << ddm.sigma << std::endl;
-        double NLL = ddm.computeParallelNLL(trials);
-        std::cout << "NLL=" << NLL << std::endl;
-        if (NLL < minNLL) {
-            minNLL = NLL;
-            minD = ddm.d;
-            minSigma = ddm.sigma;
-        }
-        fp << ddm.d << "," << ddm.sigma << "," << NLL << "\n";
-    }
-
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<seconds>(stop - start);
-
-    fp.close(); 
-
-    std::cout << 
-    "  Optimal Parameters  \n" << 
-    "======================\n" <<
-    "d      : " << minD << "\n" << 
-    "sigma  : " << minSigma << "\n" << 
-    "NLL    : " << minNLL << "\n" << 
-    "time   : " << duration.count() << std::endl;
+    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "thread");
+    std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
 }

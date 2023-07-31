@@ -6,6 +6,7 @@
 #include <functional> 
 #include <tuple>
 #include <map> 
+#include "mle_info.h"
 
 class DDMTrial {
     private:
@@ -20,6 +21,10 @@ class DDMTrial {
         DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight);
 
         DDMTrial() {};
+
+        static void writeTrialsToCSV(std::vector<DDMTrial> trials, std::string filename);
+
+        static std::vector<DDMTrial> loadTrialsFromCSV(std::string filename);
 };
 
 class DDM {
@@ -136,7 +141,7 @@ class DDM {
          * compute the likelihood of each trial in parallel on the GPU. 
          * @return 
          */
-        static DDM fitModelMLE(
+        static MLEinfo<DDM> fitModelMLE(
             std::vector<DDMTrial> trials, std::vector<float> rangeD, 
             std::vector<float> rangeSigma, float barrier, 
             std::string computeMethod="basic");

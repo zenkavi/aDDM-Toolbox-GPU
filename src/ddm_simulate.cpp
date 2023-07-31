@@ -13,15 +13,9 @@ float barrier = 1.0;
 
 std::vector<int> valDiffs = {-3, -2, -1, 0, 1, 2, 3};
 
-struct trialOutput {
-    int choice;
-    int RT;
-    int valDiff;
-};
-
 int main() {
 
-    std::vector<trialOutput> outputs;
+    std::vector<DDMTrial> trials;
 
     srand(time(NULL));
 
@@ -41,22 +35,8 @@ int main() {
         int valueLeft = 3;
         int valueRight = valueLeft - valDiff;
         DDMTrial dt = ddm.simulateTrial(valueLeft, valueRight);
-
-        trialOutput t; 
-        t.choice = dt.choice;
-        t.RT = dt.RT;
-        t.valDiff = valDiff;
-
-        outputs.push_back(t);
+        trials.push_back(dt);
     }
-
-    std::cout << "printing outputs..." << std::endl;
-    std::ofstream fp;
-    fp.open("results/ddm_simulations.csv");
-    fp << "choice,RT,valDiff\n";
-    for (trialOutput t : outputs) {
-        fp << t.choice << "," << t.RT << "," << t.valDiff << "\n";
-    }
-    fp.close();
+    DDMTrial::writeTrialsToCSV(trials, "results/ddm_simulations.csv");
 
 }

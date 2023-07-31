@@ -4,8 +4,10 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <BS_thread_pool.hpp>
 #include "addm.cuh"
-#include "bshoshany/BS_thread_pool.hpp"
+#include "ddm.cuh"
+
 
 extern float SEED;
 extern float DECAY;

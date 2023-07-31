@@ -6,7 +6,6 @@
 #include <sstream>
 #include "../include/ddm.cuh"
 #include "../include/util.h"
-#include "bshoshany/BS_thread_pool.hpp"
 #include <chrono>
 
 using namespace std::chrono;
@@ -17,26 +16,7 @@ int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
-    std::vector<DDMTrial> trials; 
-    std::ifstream file("results/ddm_simulations.csv");
-    std::string line;
-    std::getline(file, line);
-    int choice; 
-    int RT; 
-    int valDiff;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string field;
-        std::getline(ss, field, ',');
-        choice = std::stoi(field);
-        std::getline(ss, field, ',');
-        RT = std::stoi(field);
-        std::getline(ss, field, ',');
-        valDiff = std::stoi(field);
-        DDMTrial dt = DDMTrial(RT, choice, valueLeft, valueLeft - valDiff);
-        trials.push_back(dt);
-    }
-    file.close();
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv");
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
     
     DDM ddm = DDM(d, sigma, barrier);
