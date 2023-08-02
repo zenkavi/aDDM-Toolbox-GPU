@@ -30,7 +30,7 @@ class DDMTrial {
 class DDM {
     private:
         void callGetTrialLikelihoodKernel(
-            bool debug, bool normalizePosteriors, 
+            bool debug, 
             int trialsPerThread, int numBlocks, int threadsPerBlock, 
             DDMTrial *trials, double *likelihoods, int numTrials, 
             float d, float sigma, float barrier, 
@@ -119,8 +119,8 @@ class DDM {
          * @param approxStateStep Used for binning the RDV axis. 
          * @return double representing the sum of negative log likelihoods for each trial. 
          */
-        double computeGPUNLL(
-            std::vector<DDMTrial> trials, bool debug=false, bool normalizePosteriors=false, int trialsPerThread=10, 
+        ProbabilityData computeGPUNLL(
+            std::vector<DDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1);
 
         /**

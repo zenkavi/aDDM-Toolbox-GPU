@@ -8,7 +8,6 @@
 __global__
 void getTrialLikelihoodKernel(
     bool debug, 
-    bool normalizePosteriors, 
     int trialsPerThread, 
     int *RTs, 
     int *choices, 
@@ -47,8 +46,6 @@ void getTrialLikelihoodKernel(
                 barrierDown[i] = -barrier / (1 + (dec * i));
             }
 
-
-
             double *prStates = new double[numStates];
             for (int i = 0; i < numStates; i++) {
                 prStates[i] = (i == biasState) ? 1 : 0; 
@@ -67,7 +64,6 @@ void getTrialLikelihoodKernel(
                 }
             }
             
-
             float *changeMatrix = new float[numStates * numStates];
             for (int i = 0; i < numStates; i++) {
                 for (int j = 0; j < numStates; j++) {
@@ -245,14 +241,13 @@ void getTrialLikelihoodKernel(
             if (likelihood == 0) {
                 likelihood = pow(10, -20);
             }            
-            likelihoods[trialNum] = normalizePosteriors ? likelihood : -log(likelihood);
+            likelihoods[trialNum] = likelihood;
         }
     }    
 }
 
 void DDM::callGetTrialLikelihoodKernel(
-    bool debug, bool normalizePosteriors, 
-    int trialsPerThread, int numBlocks, int threadsPerBlock, 
+    bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
     DDMTrial *trials, double *likelihoods, 
     int numTrials, float d, float sigma, float barrier, 
     int nonDecisionTime, int timeStep, float approxStateStep, float dec) {
@@ -303,7 +298,6 @@ void DDM::callGetTrialLikelihoodKernel(
 
     getTrialLikelihoodKernel<<<numBlocks, threadsPerBlock>>>(
         debug,
-        normalizePosteriors,
         trialsPerThread,
         d_RTs,
         d_choices,
@@ -332,7 +326,7 @@ void DDM::callGetTrialLikelihoodKernel(
     }
         
 
-double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, bool normalizePosteriors, int trialsPerThread, int timeStep, float approxStateStep) {
+ProbabilityData DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int trialsPerThread, int timeStep, float approxStateStep) {
     int numTrials = trials.size(); 
 
     DDMTrial *d_trials;
@@ -345,8 +339,7 @@ double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, bool normali
     int numBlocks = 16;
 
     DDM::callGetTrialLikelihoodKernel(
-        debug, normalizePosteriors, 
-        trialsPerThread, numBlocks, threadsPerBlock, 
+        debug, trialsPerThread, numBlocks, threadsPerBlock, 
         trials.data(), d_likelihoods, 
         numTrials, d, sigma, barrier, 
         nonDecisionTime, timeStep, approxStateStep, DECAY);
@@ -358,11 +351,12 @@ double DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, bool normali
     cudaFree(d_likelihoods);
 
     double NLL = 0;
+    double likelihood = 0; 
     for (int i = 0; i < numTrials; i++) {
-        NLL += h_likelihoods[i];
+        likelihood += h_likelihoods[i];
+        NLL += -log(h_likelihoods[i]);
     }
-
-    return NLL;
+    return ProbabilityData(likelihood, NLL);
 }
 
 MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod, bool normalizePosteriors) {
@@ -397,11 +391,11 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
             return ddm.computeParallelNLL(trials);
         };
     } 
-    // else if (computeMethod == "gpu") {
-    //     NLLcomputer = [trials, normalizePosteriors](DDM ddm) -> double {
-    //         return ddm.computeGPUNLL(trials, false, normalizePosteriors);
-    //     };
-    // }   
+    else if (computeMethod == "gpu") {
+        NLLcomputer = [trials, normalizePosteriors](DDM ddm) -> ProbabilityData {
+            return ddm.computeGPUNLL(trials);
+        };
+    }   
 
     double minNLL = __DBL_MAX__;
     double total = 0; 
@@ -425,14 +419,15 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
 
     std::cout << "Total " << total << std::endl; 
     if (normalizePosteriors) { 
-        for (auto &i : likelihoods) i.second /= total; 
-
+        for (auto &i : likelihoods) {
+            i.second /= total; 
+        }
         double newTotal = 0; 
         for (auto &i : likelihoods) {
             std::cout << "d=" << i.first.d << " sigma=" << i.first.sigma << " likelihood=" << i.second << std::endl;
             newTotal += i.second; 
         }
-        std::cout <<"new total " << newTotal << std::endl; 
+        std::cout << "new total " << newTotal << std::endl; 
     }
     MLEinfo<DDM> info;
     info.optimal = optimal; 

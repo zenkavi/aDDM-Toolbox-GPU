@@ -8,7 +8,7 @@ TEST_EXECS := test
 GPU_EXECS := addm_nll_gpu ddm_nll_gpu
 
 CXXFLAGS := -Ofast -msse4.2 -march=native -fPIC -c
-NVCCFLAGS := -O3 -Xcompiler -fPIC -c 
+NVCCFLAGS := -O3 -Xcompiler -fPIC -c
 SHAREDFLAGS = -I include -lpthread
 LDFLAGS := -shared
 LIB := -L lib -lpthread

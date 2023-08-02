@@ -166,7 +166,7 @@ class aDDM: public DDM {
          * @param approxStateStep Used for binning the RDV axis.
          * @return double representing the sum of negative log likelihoods for each trial. 
          */
-        double computeParallelNLL(
+        ProbabilityData computeParallelNLL(
             vector<aDDMTrial> trials, bool debug=false, int timeStep=10, 
             float approxStateStep=0.1
         );
@@ -183,7 +183,7 @@ class aDDM: public DDM {
          * @param approxStateStep Used for binning the RDV axis.
          * @return double representing the sum of negative log likelihoods for each trial. 
          */
-        double computeGPUNLL(
+        ProbabilityData computeGPUNLL(
             vector<aDDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1
         );
@@ -209,7 +209,8 @@ class aDDM: public DDM {
          */
         static MLEinfo<aDDM> fitModelMLE(
             vector<aDDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
-            vector<float> rangeTheta, float barrier, string computeMethod="basic"
+            vector<float> rangeTheta, float barrier, string computeMethod="basic", 
+            bool normalizePosteriors=false
         );
 };
 

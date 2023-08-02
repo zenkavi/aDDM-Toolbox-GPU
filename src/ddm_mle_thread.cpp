@@ -19,7 +19,7 @@ int valueLeft = 3;
 int main() {
     std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv"); 
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
-    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "basic", true);
+    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "gpu", true);
     std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
 
     std::ofstream fp;
