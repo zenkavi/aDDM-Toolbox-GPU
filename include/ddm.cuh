@@ -30,7 +30,8 @@ class DDMTrial {
 class DDM {
     private:
         void callGetTrialLikelihoodKernel(
-            bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
+            bool debug, 
+            int trialsPerThread, int numBlocks, int threadsPerBlock, 
             DDMTrial *trials, double *likelihoods, int numTrials, 
             float d, float sigma, float barrier, 
             int nonDecisionTime, int timeStep, float approxStateStep, float dec);
@@ -102,9 +103,8 @@ class DDM {
          * @param approxStateStep Used for binning the RDV axis. 
          * @return double representing the sum of negative log likelihoods for each trial. 
          */
-        double computeParallelNLL(
-            std::vector<DDMTrial> trials, bool debug=false, int timeStep=10, 
-            float approxStateStep=0.1);
+        ProbabilityData computeParallelNLL(
+            std::vector<DDMTrial> trials, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
         /**
          * @brief Compute the total Negative Log Likelihood (NLL) for a vector of DDMTrials. Use
@@ -119,7 +119,7 @@ class DDM {
          * @param approxStateStep Used for binning the RDV axis. 
          * @return double representing the sum of negative log likelihoods for each trial. 
          */
-        double computeGPUNLL(
+        ProbabilityData computeGPUNLL(
             std::vector<DDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1);
 
@@ -144,7 +144,8 @@ class DDM {
         static MLEinfo<DDM> fitModelMLE(
             std::vector<DDMTrial> trials, std::vector<float> rangeD, 
             std::vector<float> rangeSigma, float barrier, 
-            std::string computeMethod="basic");
+            std::string computeMethod="basic",
+            bool normalizePosteriors=false);
 };
 
 #endif 

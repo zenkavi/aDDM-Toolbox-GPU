@@ -5,8 +5,7 @@
 #include <fstream>
 #include <chrono>
 #include <sstream>
-#include "../include/ddm.cuh"
-#include "../include/util.h"
+#include <addm/gpu_toolbox.cuh>
 
 
 using namespace std::chrono;
@@ -20,6 +19,15 @@ int valueLeft = 3;
 int main() {
     std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv"); 
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
-    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "thread");
+    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "gpu", true);
     std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
+
+    std::ofstream fp;
+    fp.open("results/ddm_likelihoods.csv");
+    fp << "d,sigma,p\n";
+    for (auto i : info.likelihoods) {
+        fp << i.first.d << "," << i.first.sigma << "," << i.second << "\n";
+    }
+    fp.close();
+
 }

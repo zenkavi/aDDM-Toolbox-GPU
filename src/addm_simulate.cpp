@@ -4,9 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <cassert>
-#include "addm.cuh"
-#include "ddm.cuh"
-#include "util.h"
+#include <addm/gpu_toolbox.cuh>
 
 int N = 1000;
 float d = 0.005;

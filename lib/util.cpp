@@ -34,12 +34,10 @@ double cumulativeDensityFunction(float mean, float sigma, float x) {
     return cdf;
 }
 
-std::map<int, std::vector<aDDMTrial>> loadDataFromSingleCSV(
-    std::string filename) {
-    
+std::map<int, std::vector<aDDMTrial>> loadDataFromSingleCSV(std::string filename) {
     std::map<int, std::vector<aDDMTrial>> data; 
     std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV(filename);
-    data.insert({1, trials});
+    data.insert({0, trials});
     return data; 
 }
 

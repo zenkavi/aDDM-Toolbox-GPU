@@ -494,26 +494,27 @@ aDDMTrial aDDM::simulateTrial(
     return trial;
 }
 
-double aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
-    double NLL = 0; 
+ProbabilityData aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
+    ProbabilityData datasetTotals = ProbabilityData(0, 0);
     BS::thread_pool pool;
-    BS::multi_future<double> futs = pool.parallelize_loop(
+    BS::multi_future<ProbabilityData> futs = pool.parallelize_loop(
         0, trials.size(), 
         [this, &trials, debug, timeStep, approxStateStep](const int a, const int b) {
-            double block_total = 0; 
+            ProbabilityData aux = ProbabilityData(0, 0);
             for (int i = a; i < b; ++i) {
-                block_total += -log(
-                    this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep)
-                );
+                double prob = this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep);
+                aux.likelihood += prob; 
+                aux.NLL += -log(prob);
             }
-            return block_total;
+            return aux;
         }
     );
-    std::vector<double> totals = futs.get();
-    for (const double t : totals) {
-        NLL += t; 
+    std::vector<ProbabilityData> totals = futs.get();
+    for (const ProbabilityData t : totals) {
+        datasetTotals.NLL += t.NLL;
+        datasetTotals.likelihood += t.likelihood; 
     }
-    return NLL;
+    return datasetTotals;
 }
 
 void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename) {
@@ -537,7 +538,7 @@ void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename)
 vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
     std::vector<aDDMTrial> trials; 
     std::vector<aDDM> addms;
-    std::ifstream file("results/addm_simulations.csv");
+    std::ifstream file(filename);
     std::string line;
     std::getline(file, line);
 
