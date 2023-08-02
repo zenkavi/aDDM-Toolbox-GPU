@@ -130,8 +130,31 @@ void testDDMtimeSpeedup() {
     stop = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(stop - start);
     std::cout << "Time: " << duration.count() << std::endl;  
-    fp << "GPU," << NLL << "," << duration.count() << std::endl;       
-    
+    fp << "GPU," << NLL << "," << duration.count() << std::endl;
+}
+
+
+void testSingleCSVLoad(FixationData fixationData) {
+    float d = 0.005; 
+    float sigma = 0.07; 
+    float theta = 0.5; 
+    int N = 1000; 
+
+    aDDM addm = aDDM(d, sigma, theta, barrier);
+    std::vector<aDDMTrial> trials = simulateDataset(d, sigma, theta, barrier, fixationData);
+    aDDMTrial::writeTrialsToCSV(trials, "results/test_trials.csv");
+    double likelihood = addm.computeParallelNLL(trials);
+    std::cout << "Likelihood: " << likelihood << std::endl; 
+
+    std::map<int, std::vector<aDDMTrial>> data = loadDataFromSingleCSV("results/test_trials.csv");
+    std::vector<aDDMTrial> newTrials = data.at(0);
+    double newLikelihood = addm.computeParallelNLL(newTrials);
+    std::cout << "New Likelihood: " << newLikelihood << std::endl; 
+    if (newLikelihood == likelihood) {
+        std::cout << "Data load test passed" << std::endl; 
+    } else {
+        std::cout << "Data load test failed" << std::endl; 
+    }
 }
 
 int main() {
@@ -140,13 +163,17 @@ int main() {
     fp.open("results/test_addm.csv");
     fp << "test,correctness,time\n";
 
-    std::cout << "reading data..." << std::endl;
+    std::cout << "Testing MLE Full Grid" << std::endl;
     std::map<int, std::vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
     testMLEfullGrid(fixationData);
-
     fp.close();
+
+    std::cout << "Testing time improvemnt for DDM" << std::endl; 
     fp.open("results/test_ddm.csv");
     fp << "test,NLL,time\n";
     testDDMtimeSpeedup();
+
+    std::cout << "Testing single-CSV input for aDDM" << std::endl; 
+    testSingleCSVLoad(fixationData);
 }

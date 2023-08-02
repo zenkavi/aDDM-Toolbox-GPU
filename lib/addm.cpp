@@ -537,7 +537,7 @@ void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename)
 vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
     std::vector<aDDMTrial> trials; 
     std::vector<aDDM> addms;
-    std::ifstream file("results/addm_simulations.csv");
+    std::ifstream file(filename);
     std::string line;
     std::getline(file, line);
 

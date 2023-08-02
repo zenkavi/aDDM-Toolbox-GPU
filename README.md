@@ -122,7 +122,25 @@ int main() {
 }
 ```
 
-In the case of using two CSVs, such as with real experimental data, the first CSV should contain the experimental data including subject parcode, trial ID, RT, choice, and item values. The second CSV should contain fixation data pertaining to each trial. Sample CSV files in an acceptable format can be found in the data directory. To load data using the two-CSV format: 
+In the case of using two CSVs, such as with real experimental data, the first CSV should contain the experimental data including subject parcode, trial ID, RT, choice, and item values. The second CSV should contain fixation data pertaining to each trial. Sample CSV files in an acceptable format can be found in the data directory. 
+
+##### Experimental Data #####
+
+| parcode | trial | rt | choice | item_left | item_right | valid | 
+| :-:     | :-:   |:-: | :-:    | :-:       | :-:        | :-:   |
+| 0       | 0     |1962| -1     | 15        | 0          |       |
+| 0       | 1     |873 | 1      | -15       | 5          |       | 
+| 0       | 2     |1345| 1      | 10        | -5         |       | 
+
+##### Fixation Data #####
+
+| parcode | trial | fix_item | fix_time |
+| :-:     | :-:   | :-:      | :-:      |
+| 0       | 0     | 3        | 176      | 
+| 0       | 0     | 0        | 42       | 
+| 0       | 0     | 1        | 188      | 
+
+To load data using the two-CSV format: 
 
 ```C++
 #include <addm/gpu_toolbox.cuh>
@@ -147,3 +165,5 @@ int main() {
     }
 }
 ```
+
+### Trial Likelihood Compuation ###

@@ -479,24 +479,21 @@ MLEinfo<aDDM> aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float
     }
 
     double minNLL = __DBL_MAX__; 
-    double totalNLL = 0; 
-    std::map<aDDM, float> posteriors; 
+    std::map<aDDM, float> likelihoods; 
     aDDM optimal = aDDM(); 
     for (aDDM addm : potentialModels) {
         double NLL = NLLcomputer(addm);
-        posteriors.insert({addm, NLL});
+        likelihoods.insert({addm, NLL});
         std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << " NLL=" << NLL << std::endl; 
-        totalNLL += NLL; 
         if (NLL < minNLL) {
             minNLL = NLL; 
             optimal = addm; 
         }
     }
 
-    for (auto &i : posteriors) i.second *= 1 / totalNLL; 
     MLEinfo<aDDM> info;
     info.optimal = optimal; 
-    info.posteriors = posteriors; 
+    info.likelihoods = likelihoods; 
     return info;   
 }
 

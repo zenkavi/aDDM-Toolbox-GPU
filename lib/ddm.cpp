@@ -345,37 +345,38 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     return trial;
 }
 
-double DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
-    double NLL = 0;
+
+ProbabilityData DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
+    ProbabilityData datasetTotals = ProbabilityData(0, 0); 
     BS::thread_pool pool;
-    BS::multi_future<double> futs = pool.parallelize_loop(
+    BS::multi_future<ProbabilityData> futs = pool.parallelize_loop(
         0, trials.size(), 
         [this, &trials, debug, timeStep, approxStateStep](const int a, const int b) {
-            double block_total = 0; 
+            ProbabilityData aux = ProbabilityData(0, 0); 
             for (int i = a; i < b; ++i) {
-                block_total += -log(
-                    this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep)
-                );
+                double prob = this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep);
+                aux.likelihood += prob; 
+                aux.NLL += -log(prob);
             }
-            return block_total;
+            return aux;
         }
-    );
-    std::vector<double> totals = futs.get();
-    for (const double t : totals) {
-        NLL += t; 
+    );        
+    std::vector<ProbabilityData> totals = futs.get();
+    for (const ProbabilityData t : totals) {
+        datasetTotals.NLL += t.NLL;
+        datasetTotals.likelihood += t.likelihood;  
     }
-    return NLL;
+    return datasetTotals;
 }
 
 void DDMTrial::writeTrialsToCSV(std::vector<DDMTrial> trials, std::string filename) {
     std::ofstream fp;
-    fp.open("results/ddm_simulations.csv");
+    fp.open(filename);
     fp << "choice,RT,valueLeft,valueRight\n";
     for (DDMTrial t : trials) {
         fp << t.choice << "," << t.RT << "," << t.valueLeft << "," << t.valueRight << "\n";
     }
     fp.close();
-
 }
 
 std::vector<DDMTrial> DDMTrial::loadTrialsFromCSV(std::string filename) {

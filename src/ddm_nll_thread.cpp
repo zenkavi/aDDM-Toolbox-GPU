@@ -4,9 +4,8 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/ddm.cuh"
-#include "../include/util.h"
 #include <chrono>
+#include <addm/gpu_toolbox.cuh>
 
 using namespace std::chrono;
 

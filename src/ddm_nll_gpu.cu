@@ -6,10 +6,7 @@
 #include <sstream>
 #include <chrono>
 #include <stdio.h>
-#include "../include/ddm.cuh"
-#include "../include/util.h"
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <addm/gpu_toolbox.cuh>
 
 
 float d = 0.005;

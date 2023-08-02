@@ -4,11 +4,11 @@ CXX := g++
 SIM_EXECS := addm_simulate ddm_simulate
 NLL_EXECS := addm_nll_thread addm_nll ddm_nll_thread ddm_nll
 MLE_EXECS := addm_mle_thread addm_mle ddm_mle_thread ddm_mle
-TEST_EXECS := test test_mle_method
+TEST_EXECS := test 
 GPU_EXECS := addm_nll_gpu ddm_nll_gpu
 
 CXXFLAGS := -Ofast -msse4.2 -march=native -fPIC -c
-NVCCFLAGS := -O3 -Xcompiler -fPIC -c
+NVCCFLAGS := -O3 -Xcompiler -fPIC -c 
 SHAREDFLAGS = -I include -lpthread
 LDFLAGS := -shared
 LIB := -L lib -lpthread
@@ -56,13 +56,13 @@ nll: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 mle: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(MLE_EXECS), $(call compile_target_cpp, $(source));)
 
-tests: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
+test: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(TEST_EXECS), $(call compile_target_cpp, $(source));)
 
 gpu: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)
 	$(foreach source, $(GPU_EXECS), $(call compile_target_cu, $(source));)
 
-all: sim nll mle tests gpu
+all: sim nll mle test gpu
 
 
 install: $(CPP_OBJ_FILES) $(CU_OBJ_FILES)

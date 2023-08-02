@@ -4,9 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include "../include/addm.cuh"
-#include "../include/ddm.cuh"
-#include "../include/util.h"
+#include <addm/gpu_toolbox.cuh>
 
 std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006};
 std::vector<float> rangeSigma = {0.06, 0.07, 0.08, 0.09};
