@@ -36,6 +36,12 @@ void getTrialLikelihoodKernel(
 
     int tid = blockIdx.x * blockDim.x + threadIdx.x; 
     if (tid < numTrials / trialsPerThread) {
+        double *prStates = new double[numStates];
+        float *probDistChangeMatrix = new float[numStates * numStates];
+        double* prStatesNew = new double[numStates];
+        float *changeUpCDFs = new float[numStates];
+        float *changeDownCDFs = new float[numStates];
+        float *changeMatrix = new float[numStates * numStates];
         for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
             
             int choice = choices[trialNum];
@@ -77,7 +83,6 @@ void getTrialLikelihoodKernel(
                 barrierDown[i] = -barrier / (1 + (dec * i));
             }
 
-            double *prStates = new double[numStates];
             for (int i = 0; i < numStates; i++) {
                 prStates[i] = (i == biasState) ? 1 : 0; 
             }
@@ -96,8 +101,6 @@ void getTrialLikelihoodKernel(
             }
 
             int time = 1;
-
-            float *changeMatrix = new float[numStates * numStates];
             for (int i = 0; i < numStates; i++) {
                 for (int j = 0; j < numStates; j++) {
                     changeMatrix[__RC2IDX(i, j, numStates)] = states[i] - states[j];
@@ -117,11 +120,6 @@ void getTrialLikelihoodKernel(
                     changeDown[__RC2IDX(i, j, numTimeSteps)] = barrierDown[j] - states[i];
                 }
             }
-
-            float *probDistChangeMatrix = new float[numStates * numStates];
-            double* prStatesNew = new double[numStates];
-            float *changeUpCDFs = new float[numStates];
-            float *changeDownCDFs = new float[numStates];
 
             for (int f = 0; f < fixLen; f++) {
                 int fItem = fixItem[f];
@@ -238,20 +236,21 @@ void getTrialLikelihoodKernel(
             delete[] barrierDown;
             delete[] probUpCrossing;
             delete[] probDownCrossing;
-            delete[] prStates;
-            delete[] changeMatrix;
             delete[] changeUp;
             delete[] changeDown;
-            delete[] probDistChangeMatrix;
-            delete[] prStatesNew;
-            delete[] changeUpCDFs;
-            delete[] changeDownCDFs;
 
             if (likelihood == 0) {
                 likelihood = pow(10, -20);
             }   
             likelihoods[trialNum] = likelihood;            
         }
+
+        delete[] prStates; 
+        delete[] changeMatrix; 
+        delete[] probDistChangeMatrix;
+        delete[] prStatesNew;
+        delete[] changeUpCDFs;
+        delete[] changeDownCDFs;
     }
 }
 

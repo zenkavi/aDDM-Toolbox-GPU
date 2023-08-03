@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector> 
 #include <random>
+#include <fstream>
 #include <ctime>
 #include <addm/gpu_toolbox.cuh>
 
@@ -27,4 +28,11 @@ int main() {
     "sigma  : " << info.optimal.sigma << "\n" << 
     "theta  : " << info.optimal.theta << "\n" << 
     "time   : " << duration.count() << std::endl;
+
+    std::ofstream fp; 
+    fp.open("results/addm_posteriors.csv"); 
+    fp << "d,sigma,theta,p" << std::endl; 
+    for (auto &i : info.likelihoods) {
+        fp << i.first.d << "," << i.first.sigma << "," << i.first.theta << "," << i.second << std::endl; 
+    }
 }

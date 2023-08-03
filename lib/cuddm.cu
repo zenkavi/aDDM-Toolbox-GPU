@@ -28,8 +28,14 @@ void getTrialLikelihoodKernel(
 
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid < numTrials / trialsPerThread) {
-        for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
+        double *prStates = new double[numStates];
+        float *changeMatrix = new float[numStates * numStates];
+        float *probDistChangeMatrix = new float[numStates * numStates];
+        double* prStatesNew = new double[numStates];
+        float *changeUpCDFs = new float[numStates];
+        float *changeDownCDFs = new float[numStates];
 
+        for (int trialNum = tid * trialsPerThread; trialNum < (tid + 1) * trialsPerThread; trialNum++) {
             int choice = choices[trialNum];
             int RT = RTs[trialNum];
             int valDiff = valDiffs[trialNum];
@@ -46,7 +52,6 @@ void getTrialLikelihoodKernel(
                 barrierDown[i] = -barrier / (1 + (dec * i));
             }
 
-            double *prStates = new double[numStates];
             for (int i = 0; i < numStates; i++) {
                 prStates[i] = (i == biasState) ? 1 : 0; 
             }
@@ -64,7 +69,6 @@ void getTrialLikelihoodKernel(
                 }
             }
             
-            float *changeMatrix = new float[numStates * numStates];
             for (int i = 0; i < numStates; i++) {
                 for (int j = 0; j < numStates; j++) {
                     changeMatrix[__RC2IDX(i, j, numStates)] = states[i] - states[j];
@@ -107,11 +111,6 @@ void getTrialLikelihoodKernel(
             int elapsedNDT = 0;
             bool recomputePDCM = true; 
             float prevMean = 0; 
-            float *probDistChangeMatrix = new float[numStates * numStates];
-            double* prStatesNew = new double[numStates];
-            float *changeUpCDFs = new float[numStates];
-            float *changeDownCDFs = new float[numStates];
-
             for (int time = 1; time < numTimeSteps; time++) {
 
                 if (debug) printf(
@@ -229,20 +228,21 @@ void getTrialLikelihoodKernel(
             delete[] barrierDown;
             delete[] probUpCrossing;
             delete[] probDownCrossing;
-            delete[] prStates;
-            delete[] changeMatrix;
             delete[] changeUp;
             delete[] changeDown;
-            delete[] probDistChangeMatrix;
-            delete[] prStatesNew;
-            delete[] changeUpCDFs;
-            delete[] changeDownCDFs;
 
             if (likelihood == 0) {
                 likelihood = pow(10, -20);
             }            
             likelihoods[trialNum] = likelihood;
         }
+
+        delete[] prStates;
+        delete[] changeMatrix;            
+        delete[] probDistChangeMatrix;
+        delete[] prStatesNew;
+        delete[] changeUpCDFs;
+        delete[] changeDownCDFs;
     }    
 }
 

@@ -61,7 +61,7 @@ For any data simulation and model fitting, the DDM and aDDM classes are going to
 
 ### N-Trial Simulation ###
 
-Both the `ddm` and `addm` classes provide methods for simulating mass amounts of trials. This can be done using the `simulateTrial` method defined in both classes: 
+Both the `DDM` and `aDDM` classes provide methods for simulating mass amounts of trials. This can be done using the `simulateTrial` method defined in both classes: 
 
 #### DDM ####
 ```C++
@@ -167,3 +167,53 @@ int main() {
 ```
 
 ### Trial Likelihood Compuation ###
+
+The `DDM` and `aDDM` classes both provide functionality for estimating trial likelihoods. The `getTrialLikelihood(...)` method takes in a single trial object and returns the likelihood that the provided model will generate that trial. Examples are provided below: 
+
+#### DDM #### 
+
+```C++
+#include <addm/gpu_toolbox.cuh>
+#include <iostream>
+
+using namespace std; 
+
+int main() {
+    DDM ddm = DDM(0.005, 0.07, 1);
+    DDMTrial trial = DDMTrial(2400, -1, 4, 5); 
+    double prob = ddm.getTrialLikelihood(trial);
+    cout << "Probability = " << prob << endl; 
+}
+```
+Output: 
+```
+Probability = 0.000166691
+```
+
+#### aDDM ####
+
+```C++
+#include <addm/gpu_toolbox.cuh>
+#include <iostream>
+
+using namespace std; 
+
+int main() {
+    aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
+    aDDMTrial trial = aDDMTrial(
+        240, 1, 3, 3, {0, -1}, {100, 140}
+    );
+    double prob = addm.getTrialLikelihood(trial);
+    cout << "Probability = " << prob << endl; 
+}
+```
+Output: 
+```
+Probability = 0.000515395
+```
+
+### Negative Log Likelihoods (NLL) ###
+
+
+
+### Maximum Likelihood Estimation (MLE) ###

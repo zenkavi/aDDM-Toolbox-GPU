@@ -20,6 +20,8 @@ class ProbabilityData {
             this->likelihood = likelihood; 
             this->NLL = NLL;
         };
+
+        operator double() const { return NLL; }
 };
 
 #endif
