@@ -4,21 +4,21 @@ CXX := g++
 SIM_EXECS := addm_simulate ddm_simulate
 NLL_EXECS := addm_nll_thread addm_nll ddm_nll_thread ddm_nll
 MLE_EXECS := addm_mle_thread addm_mle ddm_mle_thread ddm_mle
-TEST_EXECS := test 
+TEST_EXECS := test
 GPU_EXECS := addm_nll_gpu ddm_nll_gpu
-
-CXXFLAGS := -Ofast -msse4.2 -march=native -fPIC -c
-NVCCFLAGS := -O3 -Xcompiler -fPIC -c
-SHAREDFLAGS = -I include -lpthread
-LDFLAGS := -shared
-LIB := -L lib -lpthread
-INC := -I include
 
 LIB_DIR := lib
 OBJ_DIR := obj
 INC_DIR := include
 BUILD_DIR := bin
 SRC_DIR := src
+
+CXXFLAGS := -Ofast -msse4.2 -march=native -fPIC -c
+NVCCFLAGS := -O3 -Xcompiler -fPIC -c
+SHAREDFLAGS = -I $(INC_DIR) -lpthread
+LDFLAGS := -shared
+LIB := -L lib -lpthread
+INC := -I $(INC_DIR)
 
 INSTALL_LIB_DIR := /usr/lib
 INSTALL_INC_DIR := /usr/include

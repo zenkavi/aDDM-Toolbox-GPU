@@ -4,16 +4,18 @@ This toolbox can be used to perform model fitting and data simulation for the Dr
 
 ## Requirements ##
 
-This library requires NVCC and CUDA Toolkit versions 12.2 and g++ version 11.3.0. This library also uses two thrid-party C++ packages for thread pools and JSON processing: 
+This library requires NVCC and CUDA Toolkit versions 12.2 and g++ version 11.3.0. This library also uses three thrid-party C++ packages for thread pools, JSON processing, and statistical distributions: 
 
 * [BS::thread_pool](https://github.com/bshoshany/thread-pool)
 * [JSON for Modern C++](https://github.com/nlohmann/json)
+* [Boost Math/Statistical Distributions](https://www.boost.org/doc/libs/?view=category_math)
 
 These dependencies can be installed using the following commands: 
 
 ```shell
 $ wget -O /usr/include/c++/11/BS_thread_pool.hpp https://raw.githubusercontent.com/bshoshany/thread-pool/master/include/BS_thread_pool.hpp
 $ wget -O /usr/include/c++/11/nlohmann/json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
+$ apt-get install libboost-math-dev libboost-math1.74-dev
 ```
 
 *Note that the installation directory /usr/include/c++/11 may be modified to support newer versions of C++.*
@@ -212,8 +214,75 @@ Output:
 Probability = 0.000515395
 ```
 
-### Negative Log Likelihoods (NLL) ###
+### Negative Log Likelihoods (NLL) and Maximum Likelihood Estimation (MLE) ###
 
+A useful application of the trial likelihood computation is determining the total __Negative Log Likelihood (NLL)__ of an aggregation of trials. Each instance of the `DDM` and `aDDM`classes can use the following methods to determine the sum of NLLs for the trials. 
 
+* `computeParallelNLL(...)` to compute the sum of NLLs for a vector of trials using CPU multithreading. 
+* `computeGPUNLL(...)` to compute tthe sum of NLLs for a vector of trials using GPU parallelism. 
 
-### Maximum Likelihood Estimation (MLE) ###
+The sum of NLLs can also be computed without any optimization features using a simple for-loop and the `getTrialLikelihood` method. 
+
+These methods can be applied for model fitting and performing __Maximum Likelihood Estimations (MLE)__ for a set of models. The `fitModelMLE(...)` method of both the `DDM` and `aDDM` allows a user to select a range of available parameters to test for, as well as the computational optimizations to employ based off the user's hardware. The `fitModelMLE(...)` method returns an instance of the `MLEinfo` struct, which contains the model with the most optimal parameters and aggregated likelihoods information: 
+
+1. Mapping of models to their calculated NLLs over the dataset of trials. 
+2. Mapping of models to their normalized posteriors, taken as the sum of likelihoods. 
+
+Examples of MLE calculations are described below: 
+
+#### DDM ####
+
+```C++
+#include <addm/gpu_toolbox.cuh>
+#include <iostream>
+
+using namespace std::chrono;
+
+std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};
+std::vector<float> rangeSigma = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09};
+
+int barrier = 1;
+
+int main() {
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv"); 
+    std::cout << "Counted " << trials.size() << " trials." << std::endl;
+    MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "gpu", true);
+    std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
+}
+```
+Output: 
+```
+Counted 1000 trials.
+Optimal d=0.005 sigma=0.07
+```
+
+#### aDDM ####
+
+```C++
+#include <addm/gpu_toolbox.cuh>
+#include <iostream>
+
+using namespace std::chrono;
+
+std::vector<float> rangeD = {0.003, 0.004, 0.005};
+std::vector<float> rangeSigma = {0.06, 0.07, 0.08};
+std::vector<float> rangeTheta = {0.5, 0.6, 0.7};
+
+int barrier = 1;
+int valueLeft = 3; 
+
+int main() {
+    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("results/addm_simulations.csv");
+    std::cout << "Counted " << trials.size() << " trials." << std::endl;
+    MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread", true);
+    std::cout << "Optimal d=" << info.optimal.d << 
+                 " sigma=" << info.optimal.sigma << 
+                 " theta=" << info.optimal.theta << 
+                 std::endl;    
+}
+```
+Output:
+```
+Counted 1000 trials. 
+Optimal d=0.005 sigma=0.07 theta=0.5
+```

@@ -8,8 +8,8 @@ import queue
 
 PROB_LABEL = 'p'
 
-# MapData class is defined to store information for heatmaps
-class MapData:
+# _MapData class is defined to store information for heatmaps
+class _MapData:
     def __init__(self, par1_label: str, par2_label: str, par1_sums: defaultdict, par2_sums: defaultdict):
         self.par1_label = par1_label 
         self.par2_label = par2_label
@@ -24,7 +24,7 @@ N = df.shape[1] - 1
 
 # Calculate the sums of probabilities for each parameter
 param_sums: List[Tuple[str, defaultdict]] = [] 
-# Example entry: ('d', {0.005: 0.25, 0.006: 0.5, 0.005: 0.025})
+# Example entry: ('d', {0.005: 0.25, 0.006: 0.5, 0.007: 0.025})
 for param in df:
     if param != PROB_LABEL:
         param_dict = defaultdict(int)
@@ -36,23 +36,23 @@ for param in df:
 
 # Create pairs of parameters for heatmaps
 # Iterate down each column starting with the first parameter
-heatmaps: List[MapData] = list()
+heatmaps: List[_MapData] = list()
 for i in range(N):
     for j in range(i + 1, N):
-        heatmaps.append(MapData(
+        heatmaps.append(_MapData(
             param_sums[i][0], param_sums[j][0], 
                 param_sums[i][1], param_sums[j][1]))
 
 # Queue to store data for heatmaps
-heatmaps_queue: queue.Queue[Tuple[MapData, np.ndarray]] = queue.Queue()
+heatmaps_queue: queue.Queue[Tuple[_MapData, np.ndarray]] = queue.Queue()
 
-# Iterate over each MapData object and calculate the sums for the 
+# Iterate over each _MapData object and calculate the sums for the 
 # corresponding heatmap
 for map_data in heatmaps: 
     print(map_data.par1_label, map_data.par2_label, "p_sum")
     # Create empty heatmap data based on number of possible values for 
     # each parameter
-    arr_data = np.zeros((len(map_data.par1_sums), len(map_data.par2_sums))) 
+    arr_data = np.zeros((len(map_data.par1_sums),  len(map_data.par2_sums))) 
     for i in range(len(map_data.par1_sums)):
         for j in range(len(map_data.par2_sums)):
             curr_par1 = list(map_data.par1_sums.keys())[i] # first parameter
@@ -105,7 +105,6 @@ for i in range(N):
                 )
             # Invert y-axis for heatmap to match the order of values
             g.invert_yaxis()  
-            
 
             g.set_xticks(np.arange(len(data.par1_sums)) + 0.5, minor=False)  
             g.set_xticklabels(list(data.par1_sums.keys()), minor=False)  
