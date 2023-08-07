@@ -25,10 +25,10 @@ int main() {
     aDDM addm = aDDM(d, sigma, theta, barrier);
 
     auto start = high_resolution_clock::now(); 
-    double NLL = addm.computeParallelNLL(trials);
+    auto probData = addm.computeParallelNLL(trials);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
     std::cout << "Duration: " << duration.count() << " ms" << std::endl;
-    std::cout << "NLL: " << NLL << std::endl;
+    std::cout << "NLL: " << probData.NLL << std::endl;
 }

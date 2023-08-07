@@ -2,6 +2,7 @@
 #define MLE_INFO_H
 
 #include <map> 
+#include <vector>
 
 template <typename T>
 struct MLEinfo {
@@ -15,13 +16,12 @@ class ProbabilityData {
     public: 
         double likelihood; 
         double NLL; 
+        std::vector<double> trialLikelihoods; 
         
         ProbabilityData(double likelihood=0, double NLL=0) {
             this->likelihood = likelihood; 
             this->NLL = NLL;
         };
-
-        operator double() const { return NLL; }
 };
 
 #endif

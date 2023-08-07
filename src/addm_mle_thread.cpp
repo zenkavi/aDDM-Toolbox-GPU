@@ -8,9 +8,9 @@
 
 using namespace std::chrono;
 
-std::vector<float> rangeD = {0.003, 0.004, 0.005};
-std::vector<float> rangeSigma = {0.06, 0.07, 0.08};
-std::vector<float> rangeTheta = {0.5, 0.6, 0.7};
+std::vector<float> rangeD = {0.00475, 0.005, 0.00525, 0.0055, 0.00575};
+std::vector<float> rangeSigma = {0.065, 0.0675, 0.07, 0.0725, 0.075};
+std::vector<float> rangeTheta = {0.475, 0.5, 0.525, 0.55, 0.575};
 
 int barrier = 1;
 int valueLeft = 3; 

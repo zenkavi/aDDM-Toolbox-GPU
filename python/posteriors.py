@@ -7,6 +7,7 @@ from typing import Tuple, List
 import queue
 
 PROB_LABEL = 'p'
+FILENAME = 'results/addm_posteriors.csv'
 
 # _MapData class is defined to store information for heatmaps
 class _MapData:
@@ -17,7 +18,7 @@ class _MapData:
         self.par2_sums = par2_sums
 
 
-df = pd.read_csv('results/addm_posteriors.csv')
+df = pd.read_csv(FILENAME)
 
 # num columns - 1 (exclude probability)
 N = df.shape[1] - 1
@@ -49,7 +50,6 @@ heatmaps_queue: queue.Queue[Tuple[_MapData, np.ndarray]] = queue.Queue()
 # Iterate over each _MapData object and calculate the sums for the 
 # corresponding heatmap
 for map_data in heatmaps: 
-    print(map_data.par1_label, map_data.par2_label, "p_sum")
     # Create empty heatmap data based on number of possible values for 
     # each parameter
     arr_data = np.zeros((len(map_data.par1_sums),  len(map_data.par2_sums))) 
@@ -62,12 +62,10 @@ for map_data in heatmaps:
             for k, row in df.iterrows():
                 if row[map_data.par1_label] == curr_par1 and row[map_data.par2_label] == curr_par2:
                     arr_data[i][j] += row[PROB_LABEL]
-            print(curr_par1, curr_par2, arr_data[i][j])
     heatmaps_queue.put((map_data, arr_data))
-    print()
 
 # Create subplots grid for the bar plots and heatmaps
-fig, axes = plt.subplots(figsize=(10, 10), ncols=N, nrows=N)
+fig, axes = plt.subplots(figsize=(15, 10), ncols=N, nrows=N)
 
 # Iterate over each subplot and plot either a bar plot or a heatmap
 diag_idx = 0 

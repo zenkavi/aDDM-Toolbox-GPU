@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip> 
 #include "nlohmann/json.hpp"
+#include <BS_thread_pool.hpp>
 #include "util.h"
 #include "ddm.cuh"
 
@@ -349,12 +350,14 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
 ProbabilityData DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
     ProbabilityData datasetTotals = ProbabilityData(0, 0); 
     BS::thread_pool pool;
+    std::vector<double> trialLikelihoods(trials.size()); 
     BS::multi_future<ProbabilityData> futs = pool.parallelize_loop(
         0, trials.size(), 
-        [this, &trials, debug, timeStep, approxStateStep](const int a, const int b) {
+        [this, &trials, debug, timeStep, approxStateStep, &trialLikelihoods](const int a, const int b) {
             ProbabilityData aux = ProbabilityData(0, 0); 
             for (int i = a; i < b; ++i) {
                 double prob = this->getTrialLikelihood(trials[i], debug, timeStep, approxStateStep);
+                trialLikelihoods[i] = prob; 
                 aux.likelihood += prob; 
                 aux.NLL += -log(prob);
             }
@@ -366,6 +369,7 @@ ProbabilityData DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug
         datasetTotals.NLL += t.NLL;
         datasetTotals.likelihood += t.likelihood;  
     }
+    datasetTotals.trialLikelihoods = trialLikelihoods; 
     return datasetTotals;
 }
 

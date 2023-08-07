@@ -1,5 +1,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <cassert>
+#include <fstream>
 #include "../include/ddm.cuh"
 #include "../include/util.h"
 #include "../include/cuda_util.cuh"
@@ -356,7 +358,9 @@ ProbabilityData DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int
         likelihood += h_likelihoods[i];
         NLL += -log(h_likelihoods[i]);
     }
-    return ProbabilityData(likelihood, NLL);
+    ProbabilityData data = ProbabilityData(likelihood, NLL);
+    data.trialLikelihoods = h_likelihoods; 
+    return data;
 }
 
 MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod, bool normalizePosteriors) {
@@ -381,6 +385,7 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
             for (DDMTrial trial : trials) {
                 double prob = ddm.getTrialLikelihood(trial);
                 data.likelihood += prob; 
+                data.trialLikelihoods.push_back(prob);
                 data.NLL += -log(prob); 
             }
             return data; 
@@ -398,39 +403,59 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
     }   
 
     double minNLL = __DBL_MAX__;
-    double total = 0; 
-    std::map<DDM, float> likelihoods; 
+    std::map<DDM, ProbabilityData> allTrialLikelihoods;
+    std::map<DDM, float> posteriors; 
+    double numModels = rangeD.size() * rangeSigma.size(); 
+
     DDM optimal = DDM(); 
     for (DDM ddm : potentialModels) {
         ProbabilityData aux = NLLcomputer(ddm);
         if (normalizePosteriors) {
-            likelihoods.insert({ddm, aux.likelihood});
+            allTrialLikelihoods.insert({ddm, aux});
+            posteriors.insert({ddm, 1 / numModels});
         } else {
-            likelihoods.insert({ddm, aux.NLL});
+            posteriors.insert({ddm, aux.NLL});
         }
-        
         std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << " NLL=" << aux.NLL << std::endl; 
         if (aux.NLL < minNLL) {
             minNLL = aux.NLL; 
             optimal = ddm; 
         }
-        if (normalizePosteriors) total += aux.likelihood; 
     }
+    if (normalizePosteriors) {
+        for (int tn = 0; tn < trials.size(); tn++) {
+            double denominator = 0; 
+            for (const auto &ddmPD : allTrialLikelihoods) {
+                DDM curr = ddmPD.first; 
+                ProbabilityData data = ddmPD.second; 
+                double likelihood = data.trialLikelihoods[tn];
+                denominator += posteriors[curr] * likelihood; 
+            }
+            double sum = 0; 
+            for (const auto &ddmPD : allTrialLikelihoods) {
+                DDM curr = ddmPD.first; 
+                ProbabilityData data = ddmPD.second; 
+                double prior = posteriors[curr];
+                double newLikelihood = data.trialLikelihoods[tn] * prior / denominator; 
+                posteriors[curr] = newLikelihood; 
+                sum += newLikelihood; 
+            }
+            if (sum != 1) {
+                double normalizer = 1 / sum; 
+                for (auto &p : posteriors) {
+                    p.second *= normalizer; 
+                } 
+            }
+        }
 
-    std::cout << "Total " << total << std::endl; 
-    if (normalizePosteriors) { 
-        for (auto &i : likelihoods) {
-            i.second /= total; 
+        for (const auto &pair : posteriors) {
+            DDM curr = pair.first; 
+            double l = pair.second; 
+            std::cout << curr.d << " " << curr.sigma << " " << l << std::endl; 
         }
-        double newTotal = 0; 
-        for (auto &i : likelihoods) {
-            std::cout << "d=" << i.first.d << " sigma=" << i.first.sigma << " likelihood=" << i.second << std::endl;
-            newTotal += i.second; 
-        }
-        std::cout << "new total " << newTotal << std::endl; 
     }
     MLEinfo<DDM> info;
     info.optimal = optimal; 
-    info.likelihoods = likelihoods; 
+    info.likelihoods = posteriors; 
     return info;   
 }

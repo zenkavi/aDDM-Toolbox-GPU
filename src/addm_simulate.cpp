@@ -6,7 +6,7 @@
 #include <cassert>
 #include <addm/gpu_toolbox.cuh>
 
-int N = 1000;
+int N = 10000;
 float d = 0.005;
 float sigma = 0.07;
 float theta = 0.5;

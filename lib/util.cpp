@@ -10,11 +10,8 @@
 #include <functional>
 #include <vector> 
 #include <boost/math/distributions/normal.hpp>
-#include "nlohmann/json.hpp"
 #include "util.h"
 #include "addm.cuh"
-
-using json = nlohmann::json;
 
 float SEED = 100;
 float DECAY = 0;

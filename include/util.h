@@ -5,8 +5,11 @@
 #include <map>
 #include <string>
 #include <BS_thread_pool.hpp>
+#include <nlohmann/json.hpp>
 #include "addm.cuh"
 #include "ddm.cuh"
+
+using json = nlohmann::json;
 
 
 extern float SEED;
