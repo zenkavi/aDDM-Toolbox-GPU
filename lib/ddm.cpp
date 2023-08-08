@@ -106,7 +106,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
     }
     if (debug) {
-        printMatrix<float>(changeMatrix, "CHANGE MATRIX");
+        pmat<float>(changeMatrix, "CHANGE MATRIX");
     }
 
     // Distance from every state to the top barrier at each timestep
@@ -117,7 +117,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
     }
     if (debug) {
-        printMatrix<float>(changeUp, "CHANGE UP");
+        pmat<float>(changeUp, "CHANGE UP");
     }
 
 
@@ -129,7 +129,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
     }
     if (debug) {
-        printMatrix<float>(changeDown, "CHANGE DOWN");
+        pmat<float>(changeDown, "CHANGE DOWN");
     }
 
     int elapsedNDT = 0;
@@ -174,7 +174,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
         }
         
         if (debug) {
-            printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
+            pmat<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
         }
 
         // Fetch the probability states for the previous timeStep
@@ -305,7 +305,7 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
 }
 
 
-DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
+DDMTrial DDM::simulateTrial(int valueLeft, int valueRight, int timeStep, int seed) {
     float RDV = this->bias;
     int time = 0;
     int elapsedNDT = 0;
@@ -313,8 +313,9 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
     int choice;
     float mean;
     std::vector<float>RDVs = {RDV};
+
     std::random_device rd;
-    std::mt19937 gen(rd()); 
+    std::mt19937 gen(seed == -1 ? rd() : seed); 
 
     while (true) {
         if (RDV >= this->barrier || RDV <= -this->barrier) {
@@ -331,7 +332,7 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
             elapsedNDT += 1;
         }
         else {
-            mean = this->d * (ValueLeft - ValueRight);
+            mean = this->d * (valueLeft - valueRight);
         }
         std::normal_distribution<float> dist(mean, this->sigma);
         float inc = dist(gen);
@@ -339,7 +340,7 @@ DDMTrial DDM::simulateTrial(int ValueLeft, int ValueRight, int timeStep) {
         RDVs.push_back(RDV);
         time += 1;
     }
-    DDMTrial trial = DDMTrial(RT, choice, ValueLeft, ValueRight);
+    DDMTrial trial = DDMTrial(RT, choice, valueLeft, valueRight);
     trial.RDVs = RDVs;
     trial.timeStep = timeStep;
     return trial;
@@ -375,7 +376,7 @@ ProbabilityData DDM::computeParallelNLL(std::vector<DDMTrial> trials, bool debug
 void DDMTrial::writeTrialsToCSV(std::vector<DDMTrial> trials, std::string filename) {
     std::ofstream fp;
     fp.open(filename);
-    fp << "choice,RT,valueLeft,valueRight\n";
+    fp << "choice,rt,valueLeft,valueRight\n";
     for (DDMTrial t : trials) {
         fp << t.choice << "," << t.RT << "," << t.valueLeft << "," << t.valueRight << "\n";
     }

@@ -137,7 +137,7 @@ void getTrialLikelihoodKernel(
                     for (int i = 0; i < numStates; i++) {
                         for (int j = 0; j < numStates; j++) {
                             float x = changeMatrix[__RC2IDX(i, j, numStates)];
-                            probDistChangeMatrix[__RC2IDX(i, j, numStates)] = pdf(x, mean, sigma);
+                            probDistChangeMatrix[__RC2IDX(i, j, numStates)] = __pdf(x, mean, sigma);
                         }
                     }
                 }

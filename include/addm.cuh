@@ -8,30 +8,52 @@
 #include "ddm.cuh"
 #include "mle_info.h"
 
+
 using namespace std;
 
-using fixDists = map<int, vector<float>>;
 
+using fixDists = map<int, vector<float>>; /**< Maps fixation numbers to the measured durations 
+for that fixation in the provided data. */
+
+
+/**
+ * @brief Record of empirical fixation data that is used for simulating new aDDMTrials. 
+ * 
+ */
 class FixationData {
     private:
     public:
-        string fixDistType;
-        float probFixLeftFirst;
-        vector<int> latencies;
-        vector<int> transitions;
-        fixDists fixations;
+        float probFixLeftFirst; /**< Float between 0 and 1 specifying the empirical probability 
+            that the left item will be fixated on first. */
+        vector<int> latencies; /**< Vector of ints corresponding to the empirical distribution 
+            of trial latencies (Delay before first fixation) in milliseconds. */
+        vector<int> transitions; /**< Vector of ints corresponding to the empirical distribution 
+            of transitions (delays between item fixations) in milliseconds. */
+        fixDists fixations; /**< Mapping of fixation numbers (i.e. first, second, etc...) to the
+            empirical distribution of fixation durations for each number. */
 
+
+        /**
+         * @brief Construct a new Fixation Data object.
+         * 
+         * @param probFixLeftFirst Probability of fixating left first. 
+         * @param latencies Empirical distribution of trial latencies. 
+         * @param transitions Empirical distribution of trial transitions.
+         * @param fixations Mapping of fixation numbers to empirical duration distributions. 
+         */
         FixationData(
             float probFixLeftFirst, vector<int> latencies, 
-            vector<int> transitions, fixDists fixations, 
-            string fixDistType
+            vector<int> transitions, fixDists fixations
         );
     };
+
 
 /**
  * @brief Implementation of a single aDDMTrial object. 
  * 
- * ADD MORE DOCUMENTATION. 
+ * An aDDMTrial can either be generated via simulating data trials or loaded from a CSV. A single
+ * trial represents an individual binary perceptual choice made by one subject. These trials can 
+ * be aggregated together for model fitting and likelihood computations. 
  *  
  */
 class aDDMTrial: public DDMTrial {
@@ -47,6 +69,7 @@ class aDDMTrial: public DDMTrial {
         float uninterruptedLastFixTime; /**< Integer corresponding to the duration (milliseconds) 
             that the last fixation in the trial would have if it had not been terminated when a 
             decision had been made. */
+
 
         /**
          * @brief Construct a new aDDM Trial object.
@@ -71,22 +94,44 @@ class aDDMTrial: public DDMTrial {
             vector<int> fixItem={}, vector<int> fixTime={}, 
             vector<float> fixRDV={}, float uninterruptedLastFixTime=0);
 
+
         /**
          * @brief Construct an empty aDDMTrial object. 
          * 
          */
         aDDMTrial() {};
 
+
+        /**
+         * @brief Write a vector of aDDMTrials to a CSV file. 
+         * 
+         * @param trials Vector of trials to be saved. 
+         * @param filename File to store the trials in. 
+         */
         static void writeTrialsToCSV(vector<aDDMTrial> trials, string filename);
 
+
+        /**
+         * @brief Load a dataset of aDDMTrials into program memory. 
+         * 
+         * @param filename Location of the data trials. 
+         * @return vector<aDDMTrial> containing the stored trials. 
+         */
         static vector<aDDMTrial> loadTrialsFromCSV(string filename);
 };
+
 
 /**
  * @brief Implementation of the attentional Drift Diffusion Model (aDDM). 
  * 
- * ADD MORE DETAILED DESCRIPTION HERE
- * 
+ * This class contains an implementation of the attentional Drif Diffusion Model (aDDM) as described
+ * by Krajbich et al. (2010). It builds upon the standard and well-known model of the DDM by 
+ * considering the impact of visual ffixation patterns on perceptual binary choices. This class 
+ * provides methods for data simulation and model fitting via Maximum Likelihood Estimation. The 
+ * process of model fitting involves selecting some range of potential parameters (d, theta, sigma)
+ * and iterating over the parameter space to deterimine which combination best fits the provided 
+ * set of aDDM trials. For details on the simulation and model fitting process, see the individual 
+ * methods described below.  
  */
 class aDDM: public DDM {
     private:
@@ -98,12 +143,14 @@ class aDDM: public DDM {
             int nonDecisionTime, int timeStep, float approxStateStep, float decay);
 #endif 
 
+
     public: 
         float theta; /**< Float between 0 and 1, parameter of the model which 
             controls the attentional bias.*/
 
         bool operator <( const aDDM &rhs ) const { return (d + sigma + theta < rhs.d + rhs.sigma + rhs.theta); }
         
+
         /**
          * @brief Construct a new aDDM object.
          * 
@@ -121,11 +168,13 @@ class aDDM: public DDM {
             unsigned int nonDecisionTime=0, float bias=0
         );
 
+
         /**
          * @brief Construct an empty aDDM object. 
          * 
          */
         aDDM() {}
+
 
         /**
          * @brief Compute the likelihood of the trial results provided the current parameters.
@@ -140,6 +189,7 @@ class aDDM: public DDM {
         double getTrialLikelihood(aDDMTrial trial, bool debug=false, 
             int timeStep=10, float approxStateStep=0.1);
 
+
         /**
          * @brief Generate simulated fixations provided item values and empirical fixation data. 
          * 
@@ -150,12 +200,14 @@ class aDDM: public DDM {
          * @param numFixDists number of expected fixations in a given trial 
          * @param fixationDist distribution of the fixation data being used. 
          * @param timeBins predetermined time bins as used in the fixationDist. 
+         * @param seed used for standardizing any random number generators. 
          * @return aDDMTrial resulting from the simulation. 
          */
         aDDMTrial simulateTrial(
             int valueLeft, int valueRight, FixationData fixationData, int timeStep=10, 
-            int numFixDists=3, fixDists fixationDist={}, vector<int> timeBins={}
+            int numFixDists=3, fixDists fixationDist={}, vector<int> timeBins={}, int seed=-1
         );
+
 
         /**
          * @brief Compute the total Negative Log Likelihood (NLL) for a vector of aDDMTrials. Use CPU
@@ -166,12 +218,14 @@ class aDDM: public DDM {
          * @param debug Boolean specifying if state variables should be printed for debugging purposes.
          * @param timeStep Value in milliseconds used for binning the time axis. 
          * @param approxStateStep Used for binning the RDV axis.
-         * @return double representing the sum of negative log likelihoods for each trial. 
+         * @return ProbabilityData containing NLL, sum of likelihoods, and list of all computed 
+         * likelihoods. 
          */
         ProbabilityData computeParallelNLL(
             vector<aDDMTrial> trials, bool debug=false, int timeStep=10, 
             float approxStateStep=0.1
         );
+
 
 #ifndef EXCLUDE_CUDA_CODE
         /**
@@ -184,13 +238,15 @@ class aDDM: public DDM {
          * Must be divisible by the total number of trials. 
          * @param timeStep Value in milliseconds used for binning the time axis. 
          * @param approxStateStep Used for binning the RDV axis.
-         * @return double representing the sum of negative log likelihoods for each trial. 
+         * @return ProbabilityData containing NLL, sum of likelihoods, and list of all computed 
+         * likelihoods.
          */
         ProbabilityData computeGPUNLL(
             vector<aDDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1
         );
 #endif 
+
 
         /**
          * @brief Complete a grid-search based Maximum Likelihood Estimation of all possible parameter 
@@ -209,7 +265,11 @@ class aDDM: public DDM {
          * use a thread pool to divide all trials into the maximum number of CPU threads and compute
          * the NLL of each block in parallel. "gpu" will call a CUDA kernel to compute the likelihood
          * of each trial in parallel on the GPU. 
-         * @return 
+         * @param normalizePosteriors true if the returned MLEinfo should contain a mapping of aDDMs 
+         * to the normzlied posteriors distribution for each model; otherwise, the MLEinfo should 
+         * containing a mapping of aDDMs to its corresponding NLL. 
+         * @return MLEinfo containing the most optimal model and a mapping of models to floats 
+         * determined by the normalizePosteriors argument. 
          */
         static MLEinfo<aDDM> fitModelMLE(
             vector<aDDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 

@@ -1,4 +1,4 @@
-ID,choice,RT,valueLeft,valueRight,fixItem,fixTime
+trial,choice,rt,valueLeft,valueRight,fixItem,fixTime
 0,1,1080,3,3,0,220
 0,1,1080,3,3,2,170
 0,1,1080,3,3,0,70

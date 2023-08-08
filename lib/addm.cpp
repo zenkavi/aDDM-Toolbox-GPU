@@ -15,18 +15,14 @@
 
 
 FixationData::FixationData(float probFixLeftFirst, std::vector<int> latencies, 
-    std::vector<int> transitions, fixDists fixations, std::string fixDistType) {
-    if (!std::count(
-        validFixDistTypes.begin(), validFixDistTypes.end(), fixDistType)) {
-            throw std::invalid_argument(
-                "Argument type must be one of {simple, difficulty, fixation}");
-        }
+    std::vector<int> transitions, fixDists fixations) {
+
     this->probFixLeftFirst = probFixLeftFirst;
     this->latencies = latencies;
     this->transitions = transitions;
     this->fixations = fixations;
-    this->fixDistType = fixDistType;
 }
+
 
 aDDMTrial::aDDMTrial(
     unsigned int RT, int choice, int valueLeft, int valueRight, 
@@ -39,11 +35,13 @@ aDDMTrial::aDDMTrial(
         this->uninterruptedLastFixTime = uninterruptedLastFixTime;
 }
 
+
 aDDM::aDDM(float d, float sigma, float theta, float barrier, 
     unsigned int nonDecisionTime, float bias) : 
     DDM(d, sigma, barrier, nonDecisionTime, bias) {
         this->theta = theta;
 }
+
 
 double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float approxStateStep) {
     if (debug) {
@@ -149,7 +147,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         }
     }
     if (debug) {
-        printMatrix<float>(changeMatrix, "CHANGE MATRIX");
+        pmat<float>(changeMatrix, "CHANGE MATRIX");
     }
 
     // Distance from every state to the top barrier at each timestep
@@ -160,7 +158,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         }
     }
     if (debug) {
-        printMatrix<float>(changeUp, "CHANGE UP");
+        pmat<float>(changeUp, "CHANGE UP");
     }
 
 
@@ -172,7 +170,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         }
     }
     if (debug) {
-        printMatrix<float>(changeDown, "CHANGE DOWN");
+        pmat<float>(changeDown, "CHANGE DOWN");
     }
 
     assert(correctedFixItem.size() == correctedFixTime.size());
@@ -206,7 +204,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             }
         }
         if (debug) {
-            printMatrix<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
+            pmat<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
         }
         for (int t = 0; t < fTime / timeStep; t++) {
             // Fetch the probability states for the previous timeStep
@@ -313,21 +311,17 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     return likelihood;
 }
 
+
 aDDMTrial aDDM::simulateTrial(
     int valueLeft, int valueRight, FixationData fixationData, int timeStep, 
-    int numFixDists, fixDists fixationDist, vector<int> timeBins) {
+    int numFixDists, fixDists fixationDist, vector<int> timeBins, int seed) {
 
-    srand(time(NULL));
-
-    std::map<int, int> fixUnfixValueDiffs;
-    fixUnfixValueDiffs.insert({1, valueLeft - valueRight});
-    fixUnfixValueDiffs.insert({2, valueRight - valueLeft});
     std::vector<int> fixItem;
     std::vector<int> fixTime;
     std::vector<float> fixRDV;
 
     std::random_device rd;
-    std::mt19937 gen(rd()); 
+    std::mt19937 gen(seed == -1 ? rd() : seed); 
 
     float RDV = this->bias;
     int time = 0;
@@ -341,7 +335,6 @@ aDDMTrial aDDM::simulateTrial(
     int rIDX = ludist(gen);
     int latency = fixationData.latencies.at(rIDX);
     int remainingNDT = this->nonDecisionTime - latency;
-
 
     for (int t = 0; t < latency / timeStep; t++) {
         std::normal_distribution<float> ndist(0, this->sigma);
@@ -392,17 +385,11 @@ aDDMTrial aDDM::simulateTrial(
                 currFixLocation = 1;
             }
             prevFixatedItem = currFixLocation;
-            // ASSUMING WE ARE USING FIXATION DATA DIST FOR NOW
             if (fixationDist.empty()) {
-                // ASSUMING SIMPLE
-                if (fixationData.fixDistType == "simple") {
-                    vector<float> fixTimes = fixationData.fixations.at(fixNumber);
-                    std::uniform_int_distribution<std::size_t> fudist(0, fixTimes.size() - 1);
-                    rIDX = fudist(gen);
-                    currFixTime = fixTimes.at(rIDX);
-                } else {
-                    throw std::invalid_argument("not implemented");
-                }
+                vector<float> fixTimes = fixationData.fixations.at(fixNumber);
+                std::uniform_int_distribution<std::size_t> fudist(0, fixTimes.size() - 1);
+                rIDX = fudist(gen);
+                currFixTime = fixTimes.at(rIDX);
             }
             if (fixNumber < numFixDists) {
                 fixNumber++;
@@ -494,6 +481,7 @@ aDDMTrial aDDM::simulateTrial(
     return trial;
 }
 
+
 ProbabilityData aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool debug, int timeStep, float approxStateStep) {
     ProbabilityData datasetTotals = ProbabilityData(0, 0);
     BS::thread_pool pool;
@@ -520,10 +508,11 @@ ProbabilityData aDDM::computeParallelNLL(std::vector<aDDMTrial> trials, bool deb
     return datasetTotals;
 }
 
+
 void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename) {
     std::ofstream fp;
     fp.open(filename);
-    fp << "ID,choice,RT,valueLeft,valueRight,fixItem,fixTime\n";
+    fp << "trial,choice,rt,valueLeft,valueRight,fixItem,fixTime\n";
     int id = 0; 
 
     for (aDDMTrial adt : trials) {
@@ -537,6 +526,7 @@ void aDDMTrial::writeTrialsToCSV(std::vector<aDDMTrial> trials, string filename)
     }
     fp.close();    
 }
+
 
 vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
     std::vector<aDDMTrial> trials; 
@@ -596,7 +586,16 @@ vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
     return trials;
 }
 
-MLEinfo<aDDM> aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod, bool normalizePosteriors) {
+
+MLEinfo<aDDM> aDDM::fitModelMLE(
+    std::vector<aDDMTrial> trials, 
+    std::vector<float> rangeD, 
+    std::vector<float> rangeSigma, 
+    std::vector<float> rangeTheta, 
+    float barrier, 
+    std::string computeMethod, 
+    bool normalizePosteriors) {
+
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
     }

@@ -86,12 +86,13 @@ class DDM {
         /**
          * @brief Generate a simulated DDM trial provided item values. 
          * 
-         * @param ValueLeft Value of the left item. 
-         * @param ValueRight Value of the right item. 
+         * @param valueLeft Value of the left item. 
+         * @param valueRight Value of the right item. 
          * @param timeStep Value in milliseconds used for binning the time axis. 
+         * @param seed used for standardizing any random number generators. 
          * @return DDMTrial resulting from the simulation. 
          */
-        DDMTrial simulateTrial(int ValueLeft, int ValueRight, int timeStep=10);
+        DDMTrial simulateTrial(int valueLeft, int valueRight, int timeStep=10, int seed=-1);
 
         /**
          * @brief Compute the total Negative Log Likelihood (NLL) for a vector of DDMTrials. Use 

@@ -12,12 +12,10 @@
 using json = nlohmann::json;
 
 extern bool gpuInvalid; 
-extern float SEED;
 extern float DECAY;
-extern vector<string> validFixDistTypes;
 extern vector<string> validComputeMethods;
 
-struct EXPEntry {
+struct expEntry {
     int parcode;
     int trial;
     int rt;
@@ -27,7 +25,7 @@ struct EXPEntry {
     int valid;
 };
 
-struct FIXEntry {
+struct fixEntry {
     int parcode;
     int trial;
     int fix_item;
@@ -48,7 +46,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 
     int timeStep=10, int MaxFixTime=3000,
-    int numFixDists=3, std::string fixDistType="simple",
+    int numFixDists=3, 
     std::vector<int> valueDiffs={-3,-2,-1,0,1,2,3},
     std::vector<int> subjectIDs={},
     bool useOddTrials=true, 
@@ -57,12 +55,12 @@ FixationData getEmpiricalDistributions(
     bool useTransTrials=true
     );
 
-void DDMexportData(DDM ddm, DDMTrial dt);
+void DDMexportTrial(DDM ddm, DDMTrial dt, std::string filename);
 
-void aDDMexportData(aDDM addm, aDDMTrial adt);
+void aDDMexportTrial(aDDM addm, aDDMTrial adt, std::string filename);
 
 template <class T> 
-void printMatrix(std::vector<std::vector<T>> mat, std::string name) {
+void pmat(std::vector<std::vector<T>> mat, std::string name) {
     std::cout << name << std::endl;
     for (auto row : mat) {
         for (auto f : row) {

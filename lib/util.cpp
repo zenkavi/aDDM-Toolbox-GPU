@@ -19,9 +19,8 @@
 #else 
     bool gpuInvalid = false; 
 #endif 
-float SEED = 100;
+
 float DECAY = 0;
-vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};
 vector<string> validComputeMethods = {"basic", "thread", "gpu"};
 
 
@@ -50,17 +49,17 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 
     // subjectID -> aDDM Trials
     std::map<int, std::vector<aDDMTrial>> data;
-    std::map<int, std::vector<EXPEntry>> IDtoEXP;
+    std::map<int, std::vector<expEntry>> IDtoEXP;
     std::set<int> subjectIDs;
 
     std::ifstream expFile(expDataFilename);
-    std::vector<EXPEntry> expData;
+    std::vector<expEntry> expData;
     std::string eline;
     std::getline(expFile, eline);
     while (std::getline(expFile, eline)) {
         std::stringstream ss(eline);
         std::string field;
-        EXPEntry entry;
+        expEntry entry;
         std::getline(ss, field, ',');
         entry.parcode = std::stoi(field);
         subjectIDs.insert(entry.parcode);
@@ -88,14 +87,14 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
     for (int subjectID : subjectIDs) {
         data.insert({subjectID, {}});
         std::set<int> trialIDs;
-        for (EXPEntry e : expData) {
+        for (expEntry e : expData) {
             if (e.parcode == subjectID) {
                 trialIDs.insert(e.trial);
             }
         }
         std::vector<int> dataTrial;
         for (int trialID : trialIDs) {
-            for (EXPEntry e : expData) {
+            for (expEntry e : expData) {
                 if (e.trial == trialID && e.parcode == subjectID) {
                     data.at(subjectID).push_back(
                         aDDMTrial(e.rt, e.choice, e.item_left, e.item_right)
@@ -104,17 +103,16 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
             }
         }
     }
-    
 
     std::ifstream fixFile(fixDataFilename);
-    std::vector<FIXEntry> fixData;
+    std::vector<fixEntry> fixData;
     subjectIDs.clear();
     std::string fline;
     std::getline(fixFile, fline); 
     while (std::getline(fixFile, fline)) {
         std::stringstream ss(fline);
         std::string field;
-        FIXEntry entry;
+        fixEntry entry;
         std::getline(ss, field, ',');
         entry.parcode = std::stoi(field);
         subjectIDs.insert(entry.parcode);
@@ -133,8 +131,8 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
             continue;
         }
         std::set<int> trialIDs;
-        std::vector<FIXEntry> subjectEntries;
-        for (FIXEntry f : fixData) {
+        std::vector<fixEntry> subjectEntries;
+        for (fixEntry f : fixData) {
             if (f.parcode == subjectID) {
                 trialIDs.insert(f.trial);
                 subjectEntries.push_back(f);
@@ -144,7 +142,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         for (int trialID : trialIDs) {
             std::vector<int> fixItem;
             std::vector<int> fixTime;
-            for (FIXEntry fs : subjectEntries) {
+            for (fixEntry fs : subjectEntries) {
                 if (fs.trial == trialID) {
                     fixItem.push_back(fs.fix_item);
                     fixTime.push_back(fs.fix_time);
@@ -162,19 +160,13 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 
     int timeStep, int MaxFixTime,
-    int numFixDists, std::string fixDistType,
+    int numFixDists, 
     std::vector<int> valueDiffs,
     std::vector<int> subjectIDs,
     bool useOddTrials, 
     bool useEvenTrials, 
     bool useCisTrials, 
     bool useTransTrials) {
-
-    if (!std::count(
-    validFixDistTypes.begin(), validFixDistTypes.end(), fixDistType)) {
-        throw std::invalid_argument(
-            "Argument type must be one of {simple, difficulty, fixation}");
-    }
 
     int countLeftFirst = 0;
     int countTotalTrials = 0;
@@ -217,10 +209,6 @@ FixationData getEmpiricalDistributions(
                 continue;
             }
 
-            std::map<int, int> fixUnfixValueDiffs;
-            fixUnfixValueDiffs.insert({1, trial.valueLeft - trial.valueRight});
-            fixUnfixValueDiffs.insert({2, trial.valueRight - trial.valueLeft});
-
             int excludeCount = 0;
             for (int i = trial.fixItem.size() - 1; i >= 0; i--) {
                 excludeCount++;
@@ -254,16 +242,11 @@ FixationData getEmpiricalDistributions(
                         }
                     }
                     if (trial.fixTime.at(i) >= timeStep && 
-                        trial.fixTime.at(i) <= MaxFixTime
-                        ) {
-                        if (fixDistType == "simple") {
-                            if (!fixations.count(fixNumber)) {
-                                fixations.insert({fixNumber, {}});
-                            }
-                            fixations.at(fixNumber).push_back(trial.fixTime.at(i));
-                        } else {
-                            throw std::invalid_argument("not implemented");
+                        trial.fixTime.at(i) <= MaxFixTime) {
+                        if (!fixations.count(fixNumber)) {
+                            fixations.insert({fixNumber, {}});
                         }
+                        fixations.at(fixNumber).push_back(trial.fixTime.at(i));
                     }
                     if (fixNumber < numFixDists) {
                         fixNumber++;
@@ -273,11 +256,11 @@ FixationData getEmpiricalDistributions(
         }
     }
     float probFixLeftFirst = (float) countLeftFirst / (float) countTotalTrials;
-    return FixationData(probFixLeftFirst, latencies, transitions, fixations, fixDistType);
+    return FixationData(probFixLeftFirst, latencies, transitions, fixations);
 }
 
-void DDMexportData(DDM ddm, DDMTrial dt) {
-    std::ofstream o("results/data.json");
+void DDMexportTrial(DDM ddm, DDMTrial dt, std::string filename) {
+    std::ofstream o(filename);
     json j;
     j["d"] = ddm.d;
     j["sigma"] = ddm.sigma;
@@ -293,8 +276,8 @@ void DDMexportData(DDM ddm, DDMTrial dt) {
     o << std::setw(4) << j << std::endl;        
 }
 
-void aDDMexportData(aDDM addm, aDDMTrial adt) {
-    std::ofstream o("results/data.json");
+void aDDMexportTrial(aDDM addm, aDDMTrial adt, std::string filename) {
+    std::ofstream o(filename);
     json j;
     j["d"] = addm.d;
     j["sigma"] = addm.sigma;

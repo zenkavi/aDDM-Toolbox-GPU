@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import sys
-from mpl_toolkits.mplot3d import Axes3D
 
 def main():
     data = pd.read_csv("results/ddm_likelihoods.csv")

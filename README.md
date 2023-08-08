@@ -20,6 +20,20 @@ $ apt-get install libboost-math-dev libboost-math1.74-dev
 
 *Note that the installation directory /usr/include/c++/11 may be modified to support newer versions of C++.*
 
+For Python data visualization, the base requirement is Python 3.10. The following libraries are required: 
+
+* matplotlib 
+* numpy 
+* pandas
+* seaborn 
+
+These libraries can be installed using the following command:
+
+```shell
+$ pip install matplotlib numpy pandas seaborn
+```
+
+
 
 ## Installation and Usage ## 
 
@@ -81,23 +95,32 @@ using namespace std;
 int N = 1000; 
 int valueLeft = 3; 
 int valueRight = 7; 
+int SEED = 540; 
 
 int main() {
-    vector<DDMTrial> trials(N);
-    DDM ddm = DDM(0.005, 0.07);
+    vector<DDMTrial> trials;
+    DDM ddm = DDM(0.005, 0.07, 1);
 
     for (int i = 0; i < N; i++) {
-        DDMTrial trial = ddm.simulateTrial(valueLeft, ValueRight)
+        DDMTrial trial = ddm.simulateTrial(valueLeft, valueRight, 10, SEED);
         trials.push_back(trial);
     }
+
+    DDMTrial::writeTrialsToCSV(trials, "ddm_example.csv");
 }
+```
+`ddm_example.csv`:
+```
+choice,rt,valueLeft,valueRight
+1,850,3,7
+...
 ```
 
 #### aDDM #####
 
 Note that for generating aDDM trials, an existing set of empirical fixations is required. This data can be packaged in the form of 1-2 CSVs. The input format for a single CSV is identical to the output of `aDDMTrial::writeTrialsToCSV(...)`. This CSV should be formatted as follows: 
 
-|  ID 	|choice |   RT	|  valueLeft 	|  valueRight 	|  fixItem 	|  fixTime 	|
+|  trial 	|choice |   rt	|  valueLeft 	|  valueRight 	|  fixItem 	|  fixTime 	|
 |:-:	|:-:	|:-:	|:-:	        |:-:	        |:-:	    |:-:	    |
 |   0	|  1 	|  350 	|   3	        |   0           |   0	    |   200	    |
 |   0	|   1	|  350 	|   3	        |   0	        |   1	    |   150	    |
@@ -115,26 +138,38 @@ using namespace std;
 int N = 1000; 
 int valueLeft = 3; 
 int valueRight = 7; 
+int SEED = 540; 
 
 int main() {
     map<int, vector<aDDMTrial>> data = loadDataFromSingleCSV("data/addm_sims.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
 
-    vector<DDMTrial> trials(N);
+    vector<aDDMTrial> trials;
     aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
 
     for (int i = 0; i < N; i++) {
-        aDDMTrial trial = addm.simulateTrial(valueLeft, valueRight, fixationData);
+        aDDMTrial trial = addm.simulateTrial(
+            valueLeft, valueRight, fixationData, 10, 3, {}, {}, SEED);
         trials.push_back(trial);
     }
+
+    aDDMTrial::writeTrialsToCSV(trials, "addm_example.csv");
 }
+```
+`addm_example.csv`:
+```
+trial,choice,rt,valueLeft,valueRight,fixItem,fixTime
+0,1,1850,3,7,0,280
+0,1,1850,3,7,1,230
+0,1,1850,3,7,0,70
+...
 ```
 
 In the case of using two CSVs, such as with real experimental data, the first CSV should contain the experimental data including subject parcode, trial ID, RT, choice, and item values. The second CSV should contain fixation data pertaining to each trial. Sample CSV files in an acceptable format can be found in the data directory. 
 
 ##### Experimental Data #####
 
-| parcode | trial | rt | choice | item_left | item_right | valid | 
+| parcode | trial | rt | choice | valueLeft | valueRight | valid | 
 | :-:     | :-:   |:-: | :-:    | :-:       | :-:        | :-:   |
 | 0       | 0     |1962| -1     | 15        | 0          |       |
 | 0       | 1     |873 | 1      | -15       | 5          |       | 
@@ -142,7 +177,7 @@ In the case of using two CSVs, such as with real experimental data, the first CS
 
 ##### Fixation Data #####
 
-| parcode | trial | fix_item | fix_time |
+| parcode | trial | fixItem | fixTime |
 | :-:     | :-:   | :-:      | :-:      |
 | 0       | 0     | 3        | 176      | 
 | 0       | 0     | 0        | 42       | 
@@ -159,19 +194,31 @@ using namespace std;
 int N = 1000; 
 int valueLeft = 3; 
 int valueRight = 7; 
+int SEED = 540; 
 
 int main() {
     map<int, vector<aDDMTrial>> data = loadDataFromCSV("data/expdata.csv", "data/fixations.csv");
     FixationData fixationData = getEmpiricalDistributions(data);
 
-    vector<DDMTrial> trials(N);
+    vector<aDDMTrial> trials;
     aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
 
     for (int i = 0; i < N; i++) {
-        aDDMTrial trial = addm.simulateTrial(valueLeft, valueRight, fixationData);
+        aDDMTrial trial = addm.simulateTrial(
+            valueLeft, valueRight, fixationData, 10, 3, {}, {}, SEED);
         trials.push_back(trial);
     }
+    
+    aDDMTrial::writeTrialsToCSV(trials, "addm_example.csv");
 }
+```
+`addm_example.csv`:
+```
+trial,choice,rt,valueLeft,valueRight,fixItem,fixTime
+0,1,1510,3,7,0,370
+0,1,1510,3,7,2,280
+0,1,1510,3,7,0,70
+...
 ```
 
 ### Trial Likelihood Compuation ###
