@@ -13,6 +13,12 @@
 #include "util.h"
 #include "addm.cuh"
 
+
+#ifdef EXCLUDE_GPU_CODE
+    bool gpuInvalid = true; 
+#else 
+    bool gpuInvalid = false; 
+#endif 
 float SEED = 100;
 float DECAY = 0;
 vector<string> validFixDistTypes = {"simple", "difficulty", "fixation"};

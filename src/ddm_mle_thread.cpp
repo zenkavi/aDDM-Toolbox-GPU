@@ -5,7 +5,7 @@
 #include <fstream>
 #include <chrono>
 #include <sstream>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 
 using namespace std::chrono;

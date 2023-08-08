@@ -3,7 +3,7 @@
 #include <random>
 #include <ctime>
 #include <fstream>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 int N = 1000;
 float d = 0.005;

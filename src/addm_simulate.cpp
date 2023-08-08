@@ -4,9 +4,9 @@
 #include <ctime>
 #include <fstream>
 #include <cassert>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
-int N = 10000;
+int N = 1000;
 float d = 0.005;
 float sigma = 0.07;
 float theta = 0.5;

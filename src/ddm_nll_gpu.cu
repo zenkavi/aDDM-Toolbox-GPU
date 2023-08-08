@@ -6,7 +6,7 @@
 #include <sstream>
 #include <chrono>
 #include <stdio.h>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 
 float d = 0.005;
@@ -19,6 +19,6 @@ int main() {
     std::cout << "Counted " << hostTrials.size() << " trials." << std::endl;
 
     DDM ddm = DDM(d, sigma, barrier);
-    double NLL = ddm.computeGPUNLL(hostTrials);
+    double NLL = ddm.computeGPUNLL(hostTrials).NLL;
     std::cout << "NLL " << NLL << std::endl; 
 }

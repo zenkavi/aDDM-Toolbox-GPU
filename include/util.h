@@ -11,7 +11,7 @@
 
 using json = nlohmann::json;
 
-
+extern bool gpuInvalid; 
 extern float SEED;
 extern float DECAY;
 extern vector<string> validFixDistTypes;

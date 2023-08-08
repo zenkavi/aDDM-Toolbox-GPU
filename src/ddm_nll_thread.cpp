@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 using namespace std::chrono;
 
@@ -21,10 +21,10 @@ int main() {
     DDM ddm = DDM(d, sigma, barrier);
 
     auto start = high_resolution_clock::now(); 
-    double NLL = ddm.computeParallelNLL(trials);
+    auto pData = ddm.computeParallelNLL(trials);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 
     std::cout << "Duration: " << duration.count() << " ms" << std::endl;
-    std::cout << "NLL: " << NLL << std::endl;
+    std::cout << "NLL: " << pData.NLL << std::endl;
 }

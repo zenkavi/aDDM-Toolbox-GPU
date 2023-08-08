@@ -90,11 +90,13 @@ class aDDMTrial: public DDMTrial {
  */
 class aDDM: public DDM {
     private:
+#ifndef EXCLUDE_CUDA_CODE
         void callGetTrialLikelihoodKernel(
             bool debug, int trialsPerThread, int numBlocks, int threadsPerBlock, 
             aDDMTrial *trials, double *likelihoods, int numTrials, 
             float d, float sigma, float theta, float barrier, 
             int nonDecisionTime, int timeStep, float approxStateStep, float decay);
+#endif 
 
     public: 
         float theta; /**< Float between 0 and 1, parameter of the model which 
@@ -171,6 +173,7 @@ class aDDM: public DDM {
             float approxStateStep=0.1
         );
 
+#ifndef EXCLUDE_CUDA_CODE
         /**
          * @brief Compute the total Negative Log Likelihood (NLL) for a vector of aDDMTrials. Use the
          * GPU to maximize the number of trials being computed in parallel. 
@@ -187,6 +190,7 @@ class aDDM: public DDM {
             vector<aDDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1
         );
+#endif 
 
         /**
          * @brief Complete a grid-search based Maximum Likelihood Estimation of all possible parameter 

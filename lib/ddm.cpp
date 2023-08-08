@@ -412,3 +412,106 @@ std::vector<DDMTrial> DDMTrial::loadTrialsFromCSV(std::string filename) {
 
     return trials; 
 }
+
+MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod, bool normalizePosteriors) {
+    if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
+        throw std::invalid_argument("Input computeMethod is invalid.");
+    } 
+
+    sort(rangeD.begin(), rangeD.end());
+    sort(rangeSigma.begin(), rangeSigma.end());
+
+    std::vector<DDM> potentialModels; 
+    for (float d : rangeD) {
+        for (float sigma : rangeSigma) {
+            DDM ddm = DDM(d, sigma, barrier);
+            potentialModels.push_back(ddm);
+        }
+    }
+
+    std::function<ProbabilityData(DDM)> NLLcomputer; 
+    if (computeMethod == "basic") {
+        NLLcomputer = [trials](DDM ddm) -> ProbabilityData {
+            ProbabilityData data = ProbabilityData(); 
+            for (DDMTrial trial : trials) {
+                double prob = ddm.getTrialLikelihood(trial);
+                data.likelihood += prob; 
+                data.trialLikelihoods.push_back(prob);
+                data.NLL += -log(prob); 
+            }
+            return data; 
+        };
+    } 
+    else if (computeMethod == "thread") {
+        NLLcomputer = [trials](DDM ddm) -> ProbabilityData {
+            return ddm.computeParallelNLL(trials);
+        };
+    } 
+    else if (computeMethod == "gpu") {
+        if (gpuInvalid) {
+            throw std::invalid_argument("CUDA calls disabled.");
+        }
+#ifndef EXCLUDE_CUDA_CODE
+        NLLcomputer = [trials, normalizePosteriors](DDM ddm) -> ProbabilityData {
+            return ddm.computeGPUNLL(trials);
+        };
+#endif 
+    }   
+
+    double minNLL = __DBL_MAX__;
+    std::map<DDM, ProbabilityData> allTrialLikelihoods;
+    std::map<DDM, float> posteriors; 
+    double numModels = rangeD.size() * rangeSigma.size(); 
+
+    DDM optimal = DDM(); 
+    for (DDM ddm : potentialModels) {
+        ProbabilityData aux = NLLcomputer(ddm);
+        if (normalizePosteriors) {
+            allTrialLikelihoods.insert({ddm, aux});
+            posteriors.insert({ddm, 1 / numModels});
+        } else {
+            posteriors.insert({ddm, aux.NLL});
+        }
+        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << " NLL=" << aux.NLL << std::endl; 
+        if (aux.NLL < minNLL) {
+            minNLL = aux.NLL; 
+            optimal = ddm; 
+        }
+    }
+    if (normalizePosteriors) {
+        for (int tn = 0; tn < trials.size(); tn++) {
+            double denominator = 0; 
+            for (const auto &ddmPD : allTrialLikelihoods) {
+                DDM curr = ddmPD.first; 
+                ProbabilityData data = ddmPD.second; 
+                double likelihood = data.trialLikelihoods[tn];
+                denominator += posteriors[curr] * likelihood; 
+            }
+            double sum = 0; 
+            for (const auto &ddmPD : allTrialLikelihoods) {
+                DDM curr = ddmPD.first; 
+                ProbabilityData data = ddmPD.second; 
+                double prior = posteriors[curr];
+                double newLikelihood = data.trialLikelihoods[tn] * prior / denominator; 
+                posteriors[curr] = newLikelihood; 
+                sum += newLikelihood; 
+            }
+            if (sum != 1) {
+                double normalizer = 1 / sum; 
+                for (auto &p : posteriors) {
+                    p.second *= normalizer; 
+                } 
+            }
+        }
+
+        for (const auto &pair : posteriors) {
+            DDM curr = pair.first; 
+            double l = pair.second; 
+            std::cout << curr.d << " " << curr.sigma << " " << l << std::endl; 
+        }
+    }
+    MLEinfo<DDM> info;
+    info.optimal = optimal; 
+    info.likelihoods = posteriors; 
+    return info;   
+}

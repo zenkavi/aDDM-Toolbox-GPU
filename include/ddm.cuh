@@ -29,12 +29,14 @@ class DDMTrial {
 
 class DDM {
     private:
+#ifndef EXCLUDE_CUDA_CODE
         void callGetTrialLikelihoodKernel(
             bool debug, 
             int trialsPerThread, int numBlocks, int threadsPerBlock, 
             DDMTrial *trials, double *likelihoods, int numTrials, 
             float d, float sigma, float barrier, 
             int nonDecisionTime, int timeStep, float approxStateStep, float dec);
+#endif 
         
     public: 
         float d; /**< Float parameter of the model that controls the speed of integration. Referred
@@ -106,6 +108,7 @@ class DDM {
         ProbabilityData computeParallelNLL(
             std::vector<DDMTrial> trials, bool debug=false, int timeStep=10, float approxStateStep=0.1);
 
+#ifndef EXCLUDE_CUDA_CODE
         /**
          * @brief Compute the total Negative Log Likelihood (NLL) for a vector of DDMTrials. Use
          * the GPU to maximize the number of trials being computed in parallel. 
@@ -122,6 +125,7 @@ class DDM {
         ProbabilityData computeGPUNLL(
             std::vector<DDMTrial> trials, bool debug=false, int trialsPerThread=10, 
             int timeStep=10, float approxStateStep=0.1);
+#endif 
 
         /**
          * @brief Copmlete a grid-search based Maximum Likelihood Estimation of all possible 

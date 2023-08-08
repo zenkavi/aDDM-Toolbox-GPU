@@ -1,3 +1,6 @@
+#ifndef CUDA_UTIL_CUH
+#define CUDA_UTIL_CUH
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cmath> 
@@ -10,3 +13,5 @@ __device__ inline double pdf(float x, float mean, float sigma) {
     return expf(-0.5 * powf((x - mean) / sigma, 2)) / (
         sigma * sqrtf(2 * M_PI));
 }
+
+#endif 

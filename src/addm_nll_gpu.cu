@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector> 
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 float d = 0.005;
 float sigma = 0.07;

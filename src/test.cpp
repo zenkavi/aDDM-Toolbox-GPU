@@ -5,7 +5,7 @@
 #include <fstream>
 #include <chrono> 
 #include <sstream>
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 
 
 using namespace std::chrono;
@@ -61,7 +61,7 @@ void testMLEfullGrid(FixationData fixationData) {
 
                 auto start = high_resolution_clock::now();
                 for (aDDM addm : testModels) {
-                    double NLL = addm.computeParallelNLL(dataset);
+                    double NLL = addm.computeParallelNLL(dataset).NLL;
                     if (NLL < minNLL) {
                         minNLL = NLL;
                         minD = addm.d;
@@ -118,7 +118,7 @@ void testDDMtimeSpeedup() {
 
     std::cout << "Testing CPU Multithreaded implementation" << std::endl; 
     start = high_resolution_clock::now();
-    NLL = ddm.computeParallelNLL(trials);
+    NLL = ddm.computeParallelNLL(trials).NLL;
     stop = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(stop - start);
     std::cout << "Time: " << duration.count() << std::endl;  
@@ -126,7 +126,7 @@ void testDDMtimeSpeedup() {
 
     std::cout << "Testing GPU implementation" << std::endl; 
     start = high_resolution_clock::now();
-    NLL = ddm.computeGPUNLL(trials);
+    NLL = ddm.computeGPUNLL(trials).NLL;
     stop = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(stop - start);
     std::cout << "Time: " << duration.count() << std::endl;  
@@ -143,12 +143,12 @@ void testSingleCSVLoad(FixationData fixationData) {
     aDDM addm = aDDM(d, sigma, theta, barrier);
     std::vector<aDDMTrial> trials = simulateDataset(d, sigma, theta, barrier, fixationData);
     aDDMTrial::writeTrialsToCSV(trials, "results/test_trials.csv");
-    double likelihood = addm.computeParallelNLL(trials);
+    double likelihood = addm.computeParallelNLL(trials).likelihood;
     std::cout << "Likelihood: " << likelihood << std::endl; 
 
     std::map<int, std::vector<aDDMTrial>> data = loadDataFromSingleCSV("results/test_trials.csv");
     std::vector<aDDMTrial> newTrials = data.at(0);
-    double newLikelihood = addm.computeParallelNLL(newTrials);
+    double newLikelihood = addm.computeParallelNLL(newTrials).likelihood;
     std::cout << "New Likelihood: " << newLikelihood << std::endl; 
     if (newLikelihood == likelihood) {
         std::cout << "Data load test passed" << std::endl; 

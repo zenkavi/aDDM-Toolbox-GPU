@@ -595,3 +595,114 @@ vector<aDDMTrial> aDDMTrial::loadTrialsFromCSV(string filename) {
     file.close();
     return trials;
 }
+
+MLEinfo<aDDM> aDDM::fitModelMLE(std::vector<aDDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, std::vector<float> rangeTheta, float barrier, std::string computeMethod, bool normalizePosteriors) {
+    if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
+        throw std::invalid_argument("Input computeMethod is invalid.");
+    }
+
+    sort(rangeD.begin(), rangeD.end());
+    sort(rangeSigma.begin(), rangeSigma.end());
+    sort(rangeTheta.begin(), rangeTheta.end()); 
+
+    std::vector<aDDM> potentialModels; 
+    for (float d : rangeD) {
+        for (float sigma : rangeSigma) {
+            for (float theta : rangeTheta) {
+                aDDM addm = aDDM(d, sigma, theta, barrier);
+                potentialModels.push_back(addm);
+            }
+        }
+    }
+
+    std::function<ProbabilityData(aDDM)> NLLcomputer; 
+    if (computeMethod == "basic") {
+        NLLcomputer = [trials](aDDM addm) -> ProbabilityData {
+            ProbabilityData data = ProbabilityData(); 
+            for (aDDMTrial trial : trials) {
+                double prob = addm.getTrialLikelihood(trial); 
+                data.likelihood += prob; 
+                data.trialLikelihoods.push_back(prob);
+                data.NLL += -log(prob);
+            }
+            return data; 
+        };
+    }
+    else if (computeMethod == "thread") {
+        NLLcomputer = [trials](aDDM addm) -> ProbabilityData {
+            return addm.computeParallelNLL(trials);
+        };
+    }
+    else if (computeMethod == "gpu") {
+        if (gpuInvalid) {
+            throw std::invalid_argument("CUDA calls disabled.");
+        }
+#ifndef EXCLUDE_CUDA_CODE
+        NLLcomputer = [trials](aDDM addm) -> ProbabilityData {
+            return addm.computeGPUNLL(trials);
+        };
+#endif 
+    }
+
+    double minNLL = __DBL_MAX__; 
+    std::map<aDDM, ProbabilityData> allTrialLikelihoods; 
+    std::map<aDDM, float> posteriors; 
+    double numModels = rangeD.size() * rangeSigma.size() * rangeTheta.size();
+    std::cout << "num models " << numModels << std::endl;  
+
+    aDDM optimal = aDDM(); 
+    for (aDDM addm : potentialModels) {
+        ProbabilityData aux = NLLcomputer(addm);
+        if (normalizePosteriors) {
+            allTrialLikelihoods.insert({addm, aux});
+            posteriors.insert({addm, 1 / numModels});
+        } else {
+            posteriors.insert({addm, aux.NLL});
+        }
+
+        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << " NLL=" << aux.NLL << std::endl; 
+        if (aux.NLL < minNLL) {
+            minNLL = aux.NLL; 
+            optimal = addm; 
+        }
+    }
+    if (normalizePosteriors) {
+        for (int tn = 0; tn < trials.size(); tn++) {
+            double denominator = 0; 
+            for (const auto &addmPD : allTrialLikelihoods) {
+                aDDM curr = addmPD.first; 
+                ProbabilityData data = addmPD.second; 
+                double likelihood = data.trialLikelihoods[tn];
+                denominator += posteriors[curr] * likelihood; 
+            }
+            std::cout << "denominator " << denominator << std::endl; 
+            double sum = 0; 
+            for (const auto &addmPD : allTrialLikelihoods) {
+                aDDM curr = addmPD.first; 
+                ProbabilityData data = addmPD.second; 
+                double prior = posteriors[curr];
+                double newLikelihoood = data.trialLikelihoods[tn] * prior / denominator; 
+                posteriors[curr] = newLikelihoood; 
+                sum += newLikelihoood;
+            }
+            if (sum != 1) {
+                double normalizer = 1 / sum; 
+                std::cout << "normalizing with normalizer=" << normalizer << std::endl; 
+                for (auto &p : posteriors) {
+                    p.second *= normalizer; 
+                }
+            }
+        }
+
+        for (const auto &pair : posteriors) {
+            aDDM curr = pair.first; 
+            double l = pair.second; 
+            std::cout << curr.d << " " << curr.sigma << " " << curr.theta << " " << l << std::endl; 
+        }
+    }
+    MLEinfo<aDDM> info;
+    info.optimal = optimal; 
+    info.likelihoods = posteriors; 
+    return info;   
+}
+

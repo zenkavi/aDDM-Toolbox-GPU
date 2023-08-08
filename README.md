@@ -29,14 +29,14 @@ The aDDM-Toolbox-GPU library can be built and installed in one step:
 $ make install
 ```
 
-This will install the libaddm.so package as well as the corresponding header files. Although there are multiple header files corresponding to the aDDM and DDM programs, simply adding `#include <addm/gpu_toolbox.cuh>` to a C++/CUDA program will include all necessary headers. A simple usage example is described below: 
+This will install the libaddm.so package as well as the corresponding header files. Although there are multiple header files corresponding to the aDDM and DDM programs, simply adding `#include <addm/gpu_toolbox.h>` to a C++/CUDA program will include all necessary headers. A simple usage example is described below: 
 
 `main.cpp`:
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.binh>
 #include <iostream>
 
-void main() {
+int main() {
     aDDM addm = aDDM(0.005, 0.07, 0.5, 1);
     std::cout << "d: " << addm.d << std::endl; 
     std::cout << "sigma: " << addm.sigma << std::endl; 
@@ -67,7 +67,7 @@ Both the `DDM` and `aDDM` classes provide methods for simulating mass amounts of
 
 #### DDM ####
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <vector>
 
 using namespace std; 
@@ -101,7 +101,7 @@ Note that for generating aDDM trials, an existing set of empirical fixations is 
 To load data using the single-CSV format: 
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <vector>
 
 using namespace std; 
@@ -145,7 +145,7 @@ In the case of using two CSVs, such as with real experimental data, the first CS
 To load data using the two-CSV format: 
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <vector>
 
 using namespace std; 
@@ -175,7 +175,7 @@ The `DDM` and `aDDM` classes both provide functionality for estimating trial lik
 #### DDM #### 
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <iostream>
 
 using namespace std; 
@@ -195,7 +195,7 @@ Probability = 0.000166691
 #### aDDM ####
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <iostream>
 
 using namespace std; 
@@ -233,7 +233,7 @@ Examples of MLE calculations are described below:
 #### DDM ####
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <iostream>
 
 using namespace std::chrono;
@@ -259,7 +259,7 @@ Optimal d=0.005 sigma=0.07
 #### aDDM ####
 
 ```C++
-#include <addm/gpu_toolbox.cuh>
+#include <addm/gpu_toolbox.h>
 #include <iostream>
 
 using namespace std::chrono;
