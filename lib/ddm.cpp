@@ -7,7 +7,6 @@
 #include <random>
 #include <fstream>
 #include <iomanip> 
-#include "nlohmann/json.hpp"
 #include <BS_thread_pool.hpp>
 #include "util.h"
 #include "ddm.cuh"

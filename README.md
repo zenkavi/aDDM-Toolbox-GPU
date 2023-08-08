@@ -23,17 +23,23 @@ $ apt-get install libboost-math-dev libboost-math1.74-dev
 
 ## Installation and Usage ## 
 
-The aDDM-Toolbox-GPU library can be built and installed in one step: 
+The aDDM-Toolbox-GPU library offers both a GPU and non-GPU reliant installation target. The default installation build employs CUDA libraries, including the nvcc compiler. For systems without CUDA capabilities or users looking to exclude CUDA code from the installation, uncomment the following line in the Makefile: 
+
+```
+MACROS := -DEXCLUDE_CUDA_CODE
+```
+
+This macro declaration will ensure that all instances of CUDA code are undefined in the installation. The aDDM-Toolbox-GPU library can then be built and installed in one step: 
 
 ```shell
 $ make install
 ```
 
-This will install the libaddm.so package as well as the corresponding header files. Although there are multiple header files corresponding to the aDDM and DDM programs, simply adding `#include <addm/gpu_toolbox.h>` to a C++/CUDA program will include all necessary headers. A simple usage example is described below: 
+This will install the libaddm.so shared library as well as the corresponding header files. Although there are multiple header files corresponding to the aDDM and DDM programs, simply adding `#include <addm/gpu_toolbox.h>` to a C++/CUDA program will include all necessary headers. A simple usage example is described below: 
 
 `main.cpp`:
 ```C++
-#include <addm/gpu_toolbox.binh>
+#include <addm/gpu_toolbox.h>
 #include <iostream>
 
 int main() {
@@ -244,7 +250,7 @@ std::vector<float> rangeSigma = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09};
 int barrier = 1;
 
 int main() {
-    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("results/ddm_simulations.csv"); 
+    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("data/ddm_sims.csv"); 
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
     MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "gpu", true);
     std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
@@ -272,7 +278,7 @@ int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
-    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("results/addm_simulations.csv");
+    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("data/addm_sims.csv");
     std::cout << "Counted " << trials.size() << " trials." << std::endl;
     MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread", true);
     std::cout << "Optimal d=" << info.optimal.d << 
