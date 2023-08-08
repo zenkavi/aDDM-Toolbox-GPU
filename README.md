@@ -33,8 +33,6 @@ These libraries can be installed using the following command:
 $ pip install matplotlib numpy pandas seaborn
 ```
 
-
-
 ## Installation and Usage ## 
 
 The aDDM-Toolbox-GPU library offers both a GPU and non-GPU reliant installation target. The default installation build employs CUDA libraries, including the nvcc compiler. For systems without CUDA capabilities or users looking to exclude CUDA code from the installation, uncomment the following line in the Makefile: 
