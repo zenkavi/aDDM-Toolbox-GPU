@@ -344,7 +344,7 @@ ProbabilityData DDM::computeGPUNLL(std::vector<DDMTrial> trials, bool debug, int
         debug, trialsPerThread, numBlocks, threadsPerBlock, 
         trials.data(), d_likelihoods, 
         numTrials, d, sigma, barrier, 
-        nonDecisionTime, timeStep, approxStateStep, DECAY);
+        nonDecisionTime, timeStep, approxStateStep, decay);
 
     std::vector<double> h_likelihoods(numTrials);
     cudaMemcpy(h_likelihoods.data(), d_likelihoods, numTrials * sizeof(double), cudaMemcpyDeviceToHost);

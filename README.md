@@ -18,7 +18,7 @@ $ wget -O /usr/include/c++/11/nlohmann/json.hpp https://raw.githubusercontent.co
 $ apt-get install libboost-math-dev libboost-math1.74-dev
 ```
 
-*Note that the installation directory /usr/include/c++/11 may be modified to support newer versions of C++.*
+*Note that the installation directory /usr/include/c++/11 may be modified to support newer versions of C++. In the event of a __Permission Denied__ error, precede the above commands with __sudo__.*
 
 For Python data visualization, the base requirement is Python 3.10. The following libraries are required: 
 
@@ -27,7 +27,7 @@ For Python data visualization, the base requirement is Python 3.10. The followin
 * pandas
 * seaborn 
 
-These libraries can be installed using the following command:
+See [requirements.txt](requirements.txt) for specific versions. These libraries can be installed using the following command:
 
 ```shell
 $ pip install matplotlib numpy pandas seaborn
@@ -46,6 +46,8 @@ This macro declaration will ensure that all instances of CUDA code are undefined
 ```shell
 $ make install
 ```
+
+*In the event of a __Permission Denied__ error, precede the above command with __sudo__.*
 
 This will install the libaddm.so shared library as well as the corresponding header files. Although there are multiple header files corresponding to the aDDM and DDM programs, simply adding `#include <addm/gpu_toolbox.h>` to a C++/CUDA program will include all necessary headers. A simple usage example is described below: 
 
@@ -71,6 +73,8 @@ d: 0.005
 sigma: 0.07
 theta: 0.5
 ```
+
+*Note that __nvcc__ is assumed to be at least __version 12.2__. The compiler path may need to be modified to support this requirement.*
 
 ## Examples ##
 
@@ -167,11 +171,11 @@ In the case of using two CSVs, such as with real experimental data, the first CS
 
 ##### Experimental Data #####
 
-| parcode | trial | rt | choice | valueLeft | valueRight | valid | 
-| :-:     | :-:   |:-: | :-:    | :-:       | :-:        | :-:   |
-| 0       | 0     |1962| -1     | 15        | 0          |       |
-| 0       | 1     |873 | 1      | -15       | 5          |       | 
-| 0       | 2     |1345| 1      | 10        | -5         |       | 
+| parcode | trial | rt | choice | valueLeft | valueRight |  
+| :-:     | :-:   |:-: | :-:    | :-:       | :-:        | 
+| 0       | 0     |1962| -1     | 15        | 0          | 
+| 0       | 1     |873 | 1      | -15       | 5          |  
+| 0       | 2     |1345| 1      | 10        | -5         |  
 
 ##### Fixation Data #####
 

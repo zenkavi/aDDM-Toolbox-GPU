@@ -37,8 +37,8 @@ aDDMTrial::aDDMTrial(
 
 
 aDDM::aDDM(float d, float sigma, float theta, float barrier, 
-    unsigned int nonDecisionTime, float bias) : 
-    DDM(d, sigma, barrier, nonDecisionTime, bias) {
+    unsigned int nonDecisionTime, float bias, float decay) : 
+    DDM(d, sigma, barrier, nonDecisionTime, bias, decay) {
         this->theta = theta;
 }
 
@@ -92,13 +92,17 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     numTimeSteps++;
 
     std::vector<float> barrierUp(numTimeSteps);
-    std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
     std::vector<float> barrierDown(numTimeSteps);
-    std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
-    for (int i = 1; i < numTimeSteps; i++) {
-        barrierUp.at(i) = this->barrier / (1 + (DECAY * i));
-        barrierDown.at(i) = -this->barrier / (1 + (DECAY * i));
+    if (this->decay != 0) {
+        for (int i = 1; i < numTimeSteps; i++) {
+            barrierUp.at(i) = this->barrier / (1 + (this->decay * i));
+            barrierDown.at(i) = -this->barrier / (1 + (this->decay * i));
+        }
+    } else {
+        std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
+        std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
     }
+    
 
     int halfNumStateBins = ceil(this->barrier / approxStateStep); 
     float stateStep = this->barrier / (halfNumStateBins + 0.5);

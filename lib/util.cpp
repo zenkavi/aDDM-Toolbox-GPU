@@ -20,7 +20,6 @@
     bool gpuInvalid = false; 
 #endif 
 
-float DECAY = 0;
 vector<string> validComputeMethods = {"basic", "thread", "gpu"};
 
 
@@ -73,8 +72,6 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
         entry.item_left = std::stoi(field);
         std::getline(ss, field, ',');
         entry.item_right = std::stoi(field);
-        std::getline(ss, field, ',');
-        entry.valid = std::stoi(field);
         expData.push_back(entry);
         if (IDtoEXP.count(entry.parcode)) {
             IDtoEXP.at(entry.parcode).push_back(entry);

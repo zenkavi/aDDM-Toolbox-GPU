@@ -19,7 +19,7 @@ DDMTrial::DDMTrial(unsigned int RT, int choice, int valueLeft, int valueRight) {
     this->valueRight = valueRight;
 }
 
-DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, float bias) {
+DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, float bias, float decay) {
     if (barrier <= 0) {
         throw std::invalid_argument("barrier parameter must be larger than 0.");
     }
@@ -31,6 +31,7 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
     this->barrier = barrier; 
     this->nonDecisionTime = nonDecisionTime;
     this->bias = bias;    
+    this->decay = decay; 
 }
 
 double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float approxStateStep) {
@@ -43,14 +44,17 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
     }
 
     std::vector<float> barrierUp(numTimeSteps);
-    std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
     std::vector<float> barrierDown(numTimeSteps);
-    std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
-
-    for (int i = 1; i < numTimeSteps; i++) {
-        barrierUp.at(i) = this->barrier / (1 + (DECAY * i));
-        barrierDown.at(i) = -this->barrier / (1 + (DECAY * i));
+    if (this->decay != 0) {
+        for (int i = 1; i < numTimeSteps; i++) {
+            barrierUp.at(i) = this->barrier / (1 + (this->decay * i));
+            barrierDown.at(i) = -this->barrier / (1 + (this->decay * i));
+        }
+    } else {
+        std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
+        std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
     }
+    
 
     int halfNumStateBins = ceil(this->barrier / approxStateStep);
     float stateStep = this->barrier / (halfNumStateBins + 0.5);

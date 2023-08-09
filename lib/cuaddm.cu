@@ -424,7 +424,7 @@ ProbabilityData aDDM::computeGPUNLL(std::vector<aDDMTrial> trials, bool debug, i
         debug, trialsPerThread, numBlocks, threadsPerBlock,
         trials.data(), d_likelihoods, numTrials, 
         d, sigma, theta, barrier, 
-        nonDecisionTime, timeStep, approxStateStep, DECAY
+        nonDecisionTime, timeStep, approxStateStep, decay
     );
 
     std::vector<double> h_likelihoods(numTrials);

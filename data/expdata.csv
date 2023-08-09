@@ -1,4 +1,4 @@
-parcode,trial,rt,choice,valueLeft,valueRight,valid
+parcode,trial,rt,choice,valueLeft,valueRight
 0,0,1962.000000,-1,15,0
 0,1,2899.000000,-1,-10,-15
 0,2,1631.000000,1,-15,15

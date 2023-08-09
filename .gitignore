@@ -6,3 +6,5 @@ bin/*
 docs
 # ignore installation object files
 obj/*
+# ignore output data from pipreqs
+target 
