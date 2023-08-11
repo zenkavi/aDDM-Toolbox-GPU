@@ -47,6 +47,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     if (debug) {
         std::cout << std::setprecision(6) << std::fixed;
     }
+    // Discount any non-decision time if greater than 0. 
     std::vector<int> correctedFixItem = trial.fixItem;
     std::vector<int> correctedFixTime = trial.fixTime;
     if (this->nonDecisionTime > 0) {
@@ -82,6 +83,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         std::cout << "------" << std::endl;
     }
     
+    // Get number of timesteps for this trial 
     int numTimeSteps = 0;
     for (int fTime : correctedFixTime) {
         numTimeSteps += fTime / timeStep;
@@ -91,6 +93,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     }
     numTimeSteps++;
 
+    // Values of barriers over time 
     std::vector<float> barrierUp(numTimeSteps);
     std::vector<float> barrierDown(numTimeSteps);
     if (this->decay != 0) {
@@ -103,7 +106,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
     }
     
-
+    // Obtain the correct state step
     int halfNumStateBins = ceil(this->barrier / approxStateStep); 
     float stateStep = this->barrier / (halfNumStateBins + 0.5);
     std::vector<float> states;
@@ -111,6 +114,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
         states.push_back(ss);
     }
 
+    // Get index of the bias state
     float biasStateVal = MAXFLOAT;
     int biasState = 0;
     for (int i = 0; i < states.size(); i++) {
@@ -178,6 +182,8 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     }
 
     assert(correctedFixItem.size() == correctedFixTime.size());
+
+    // Iterate over all fixations in the trial 
     std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size()));
     for (int c = 0; c < correctedFixItem.size(); c++) {
         int fItem = correctedFixItem[c];
@@ -241,6 +247,10 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
                 std::cout << "------" << std::endl;
             }
 
+            // Compute the probabilities of crossing the up and down barriers. This is given by: 
+            // sum over all states s (
+            //   probability of being in s at [t - 1] * probability of crossing barrier at [t]
+            // )
             std::vector<float> currChangeUp;
             for (auto s : changeUp) {
                 currChangeUp.push_back(s.at(time));
@@ -275,6 +285,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
                 tempDownCross += changeDownCDFs[i] * prTimeSlice[i];
             }
 
+            // Renormalize to cope with numerical approximations. 
             double sumIn = 0; 
             for (double prob : prTimeSlice) {
                 sumIn += prob; 
@@ -298,6 +309,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             time++;
         }
     }
+    // Compute the likelihood based on the final choice. 
     double likelihood = 0;
     if (trial.choice == -1) {
         if (probUpCrossing[probUpCrossing.size() - 1] > 0) {
@@ -309,6 +321,7 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             likelihood = probDownCrossing[probDownCrossing.size() - 1];
         }
     }
+    // Return a non-zero value to prevent log(0)
     if (likelihood == 0) {
         likelihood = pow(10, -20);
     }
@@ -324,6 +337,7 @@ aDDMTrial aDDM::simulateTrial(
     std::vector<int> fixTime;
     std::vector<float> fixRDV;
 
+    // If no seed is provided (default -1), use a random generator. Otherwise, use the seed
     std::random_device rd;
     std::mt19937 gen(seed == -1 ? rd() : seed); 
 
@@ -340,6 +354,7 @@ aDDMTrial aDDM::simulateTrial(
     int latency = fixationData.latencies.at(rIDX);
     int remainingNDT = this->nonDecisionTime - latency;
 
+    // Iterate over latency
     for (int t = 0; t < latency / timeStep; t++) {
         std::normal_distribution<float> ndist(0, this->sigma);
         float inc = ndist(gen);
@@ -365,6 +380,7 @@ aDDMTrial aDDM::simulateTrial(
         }
     }
 
+    // Add latency to this trial's data
     fixRDV.push_back(RDV);
     RDVs.push_back(RDV);
     fixItem.push_back(0);
@@ -380,6 +396,7 @@ aDDMTrial aDDM::simulateTrial(
 
     while (true) {
         if (currFixLocation == 0) {
+            // Sample based off of item location
             if (prevFixatedItem == -1) {
                 std::discrete_distribution<> ddist({fixationData.probFixLeftFirst, 1 - fixationData.probFixLeftFirst});
                 currFixLocation = ddist(gen) + 1;
@@ -399,11 +416,13 @@ aDDMTrial aDDM::simulateTrial(
                 fixNumber++;
             }
         }
+        // Transition
         else {
             currFixLocation = 0;
             rIDX = rand() % fixationData.transitions.size();
             currFixTime = fixationData.transitions.at(rIDX);
         }
+        // Iterate over any remaining non-decision time 
         if (remainingNDT > 0)  {
             for (int t = 0; t < remainingNDT / timeStep; t++) {
                 std::normal_distribution<float> ndist(0, this->sigma);
@@ -651,7 +670,6 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
     std::map<aDDM, ProbabilityData> allTrialLikelihoods; 
     std::map<aDDM, float> posteriors; 
     double numModels = rangeD.size() * rangeSigma.size() * rangeTheta.size();
-    std::cout << "num models " << numModels << std::endl;  
 
     aDDM optimal = aDDM(); 
     for (aDDM addm : potentialModels) {
@@ -678,7 +696,6 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
                 double likelihood = data.trialLikelihoods[tn];
                 denominator += posteriors[curr] * likelihood; 
             }
-            std::cout << "denominator " << denominator << std::endl; 
             double sum = 0; 
             for (const auto &addmPD : allTrialLikelihoods) {
                 aDDM curr = addmPD.first; 
@@ -690,17 +707,10 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
             }
             if (sum != 1) {
                 double normalizer = 1 / sum; 
-                std::cout << "normalizing with normalizer=" << normalizer << std::endl; 
                 for (auto &p : posteriors) {
                     p.second *= normalizer; 
                 }
             }
-        }
-
-        for (const auto &pair : posteriors) {
-            aDDM curr = pair.first; 
-            double l = pair.second; 
-            std::cout << curr.d << " " << curr.sigma << " " << curr.theta << " " << l << std::endl; 
         }
     }
     MLEinfo<aDDM> info;

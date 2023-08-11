@@ -6,7 +6,7 @@ CXX := g++
 SIM_EXECS := addm_simulate ddm_simulate
 NLL_EXECS := addm_nll_thread addm_nll ddm_nll_thread ddm_nll
 MLE_EXECS := addm_mle_thread addm_mle ddm_mle_thread ddm_mle
-TEST_EXECS := test
+TEST_EXECS := test benchmark
 GPU_EXECS := addm_nll_gpu ddm_nll_gpu
 
 LIB_DIR := lib

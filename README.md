@@ -35,13 +35,13 @@ $ pip install matplotlib numpy pandas seaborn
 
 ## Installation and Usage ## 
 
-The aDDM-Toolbox-GPU library offers both a GPU and non-GPU reliant installation target. The default installation build employs CUDA libraries, including the nvcc compiler. For systems without CUDA capabilities or users looking to exclude CUDA code from the installation, uncomment the following line in the Makefile: 
+The aDDM-Toolbox-GPU library offers both a GPU and non-GPU reliant installation target. The default installation build employs CUDA libraries, including the NVCC compiler. For systems without CUDA capabilities or users looking to exclude CUDA code from the installation, uncomment the following line in the Makefile: 
 
 ```
 MACROS := -DEXCLUDE_CUDA_CODE
 ```
 
-This macro declaration will ensure that all instances of CUDA code are undefined in the installation. The aDDM-Toolbox-GPU library can then be built and installed in one step: 
+This macro declaration will ensure that all instances of CUDA code are undefined in the installation. Note that this removes the necessity to have NVCC and CUDA versions 12.2 installed; however, all other dependencies are still required. The aDDM-Toolbox-GPU library can then be built and installed in one step: 
 
 ```shell
 $ make install
@@ -341,3 +341,11 @@ Output:
 Counted 1000 trials. 
 Optimal d=0.005 sigma=0.07 theta=0.5
 ```
+
+## Authors ## 
+
+Jake Goldman - jgoldman@caltech.edu, [jakegoldm](https://github.com/jakegoldm)
+
+## Acknowledgements ##
+
+This toolbox was developed as part of a resarch project in the [Rangel Neuroeconomics Lab](http://www.rnl.caltech.edu/) at the California Institute of Technology. 

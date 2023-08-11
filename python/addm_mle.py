@@ -15,6 +15,8 @@ def main():
 
     fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, 9))
 
+    vmin = df['NLL'].min()
+
     for i, theta in enumerate(thetas):
         data = df[df['theta'] == theta]
 
@@ -24,10 +26,11 @@ def main():
 
         heatmap = ax.imshow(
             np.reshape(data['NLL'], (-1, len(data['d'].unique()))),
-            cmap='plasma',
+            cmap='YlGnBu',
             extent=[0, len(data['d'].unique()) - 1, 0, len(data['sigma'].unique()) - 1],
             origin='lower',
             aspect='auto',
+            vmin=vmin,
             vmax=6200
         )
         ax.set_title(f'Theta = {theta}')

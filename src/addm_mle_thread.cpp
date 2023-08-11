@@ -8,9 +8,9 @@
 
 using namespace std::chrono;
 
-std::vector<float> rangeD = {0.00475, 0.005, 0.00525, 0.0055, 0.00575};
-std::vector<float> rangeSigma = {0.065, 0.0675, 0.07, 0.0725, 0.075};
-std::vector<float> rangeTheta = {0.475, 0.5, 0.525, 0.55, 0.575};
+std::vector<float> rangeD = {0.003, 0.005, 0.007, 0.009};
+std::vector<float> rangeSigma = {0.06, 0.07, 0.08, 0.1};
+std::vector<float> rangeTheta = {0.5, 0.6, 0.7, 0.9};
 
 int barrier = 1;
 int valueLeft = 3; 
@@ -18,7 +18,7 @@ int valueLeft = 3;
 int main() {
     std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("results/addm_simulations.csv");
     auto start = high_resolution_clock::now(); 
-    MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread", true);
+    MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread");
     auto stop = high_resolution_clock::now(); 
     auto duration = duration_cast<seconds>(stop - start);
     std::cout << 
@@ -30,8 +30,8 @@ int main() {
     "time   : " << duration.count() << std::endl;
 
     std::ofstream fp; 
-    fp.open("results/addm_posteriors.csv"); 
-    fp << "d,sigma,theta,p" << std::endl; 
+    fp.open("results/addm_mle.csv"); 
+    fp << "d,sigma,theta,NLL" << std::endl; 
     for (auto &i : info.likelihoods) {
         fp << i.first.d << "," << i.first.sigma << "," << i.first.theta << "," << i.second << std::endl; 
     }

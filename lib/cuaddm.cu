@@ -154,6 +154,20 @@ void getTrialLikelihoodKernel(
                     }
                 }
 
+
+                double tempUpCross; 
+                double tempDownCross; 
+                if (dec == 0) {
+                    for (int i = 0; i < numStates; i++) {
+                        float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
+                        changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
+                    }    
+                    for (int i = 0; i < numStates; i++) {
+                        float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
+                        changeDownCDFs[i] = normcdff((x - mean) / sigma);
+                    } 
+                }
+
                 for (int t = 0; t < fTime / timeStep; t++) {
                     double rowSum; 
                     for (int i = 0; i < numStates; i++) {
@@ -170,36 +184,35 @@ void getTrialLikelihoodKernel(
                         }
                     }
 
-                    for (int i = 0; i < numStates; i++) {
-                        float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
-                        changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
-                    }
-                    if (debug) {
+                    if (dec != 0) {
                         for (int i = 0; i < numStates; i++) {
-                            printf("changeUpCDFs[%i] = %f\n", i, changeUpCDFs[i]);
+                            float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
+                            changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
                         }
+                        if (debug) {
+                            for (int i = 0; i < numStates; i++) {
+                                printf("changeUpCDFs[%i] = %f\n", i, changeUpCDFs[i]);
+                            }
+                        }                    
+                        for (int i = 0; i < numStates; i++) {
+                            float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
+                            changeDownCDFs[i] = normcdff((x - mean) / sigma);
+                        }
+                        if (debug) {
+                            for (int i = 0; i < numStates; i++) {
+                                printf("changeDownCDFs[%i] = %f\n", i, changeDownCDFs[i]);
+                            }
+                        }                  
                     }
-                    double tempUpCross = 0; 
+
+                    tempUpCross = 0; 
                     for (int i = 0; i < numStates; i++) {
                         tempUpCross += changeUpCDFs[i] * prStates[i];
-                    }
-
-                    for (int i = 0; i < numStates; i++) {
-                        float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
-                        changeDownCDFs[i] = normcdff((x - mean) / sigma);
-                    }
-                    if (debug) {
-                        for (int i = 0; i < numStates; i++) {
-                            printf("changeDownCDFs[%i] = %f\n", i, changeDownCDFs[i]);
-                        }
-                    }
-                    double tempDownCross = 0; 
+                    }     
+                    tempDownCross = 0; 
                     for (int i = 0; i < numStates; i++) {
                         tempDownCross += changeDownCDFs[i] * prStates[i];
-                    }
-
-                    if (debug) printf("temp up cross = %f\n", tempUpCross);
-                    if (debug) printf("temp down cross = %f\n", tempDownCross);
+                    }     
 
                     double sumIn = 0; 
                     double sumCurrent = tempUpCross + tempDownCross; 

@@ -259,7 +259,7 @@ class aDDM: public DDM {
          */
         static MLEinfo<aDDM> fitModelMLE(
             vector<aDDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
-            vector<float> rangeTheta, float barrier, string computeMethod="basic", 
+            vector<float> rangeTheta, float barrier=1, string computeMethod="basic", 
             bool normalizePosteriors=false
         );
 };
