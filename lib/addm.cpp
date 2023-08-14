@@ -183,8 +183,14 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
 
     assert(correctedFixItem.size() == correctedFixTime.size());
 
+    std::map<float, std::vector<std::vector<double>>> meansToPDCMs; 
+
     // Iterate over all fixations in the trial 
     std::vector<std::vector<double>> probDistChangeMatrix(states.size(), std::vector<double>(states.size()));
+    std::vector<float> currChangeUp;            
+    std::vector<double> changeUpCDFs;
+    std::vector<float> currChangeDown;
+    std::vector<double> changeDownCDFs;
     for (int c = 0; c < correctedFixItem.size(); c++) {
         int fItem = correctedFixItem[c];
         int fTime = correctedFixTime[c];
@@ -207,15 +213,46 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
             mean = 0; 
         }
 
-        for (size_t i = 0; i < states.size(); i++) {
-            for (size_t j = 0; j < states.size(); j++) {
-                float x = changeMatrix[i][j];
-                probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
+        if (meansToPDCMs.count(mean)) {
+            probDistChangeMatrix = meansToPDCMs.at(mean);
+        } else {
+            for (size_t i = 0; i < states.size(); i++) {
+                for (size_t j = 0; j < states.size(); j++) {
+                    float x = changeMatrix[i][j];
+                    probDistChangeMatrix[i][j] = probabilityDensityFunction(mean, this->sigma, x);
+                }
             }
+            meansToPDCMs.insert({mean, probDistChangeMatrix});
         }
         if (debug) {
             pmat<double>(probDistChangeMatrix, "PROBABILITY CHANGE MATRIX");
         }
+
+        // Compute the probabilities of crossing the up and down barriers. This is given by: 
+        // sum over all states s (
+        //   probability of being in s at [t - 1] * probability of crossing barrier at [t]
+        // )
+        if (this->decay == 0) {
+            for (auto s : changeUp) {
+                currChangeUp.push_back(s.at(time));
+            }
+            for (int i = 0; i < currChangeUp.size(); i++) {
+                float x = currChangeUp[i];
+                changeUpCDFs.push_back(
+                    1 - cumulativeDensityFunction(mean, this->sigma, x)
+                );
+            }
+            for (auto s: changeDown) {
+                currChangeDown.push_back(s.at(time));
+            }
+            for (int i = 0; i < currChangeDown.size(); i++) {
+                float x = currChangeDown[i];
+                changeDownCDFs.push_back(
+                    cumulativeDensityFunction(mean, this->sigma, x)
+                );
+            }
+        }
+
         for (int t = 0; t < fTime / timeStep; t++) {
             // Fetch the probability states for the previous timeStep
             std::vector<double> prTimeSlice(states.size());
@@ -247,39 +284,31 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
                 std::cout << "------" << std::endl;
             }
 
-            // Compute the probabilities of crossing the up and down barriers. This is given by: 
-            // sum over all states s (
-            //   probability of being in s at [t - 1] * probability of crossing barrier at [t]
-            // )
-            std::vector<float> currChangeUp;
-            for (auto s : changeUp) {
-                currChangeUp.push_back(s.at(time));
+            if (this->decay != 0) {
+                for (auto s : changeUp) {
+                    currChangeUp.push_back(s.at(time));
+                }
+                for (int i = 0; i < currChangeUp.size(); i++) {
+                    float x = currChangeUp[i];
+                    changeUpCDFs.push_back(
+                        1 - cumulativeDensityFunction(mean, this->sigma, x)
+                    );
+                }            
+                for (auto s: changeDown) {
+                    currChangeDown.push_back(s.at(time));
+                }
+                for (int i = 0; i < currChangeDown.size(); i++) {
+                    float x = currChangeDown[i];
+                    changeDownCDFs.push_back(
+                        cumulativeDensityFunction(mean, this->sigma, x)
+                    );
+                }
             }
-            std::vector<double> changeUpCDFs;
-            for (int i = 0; i < currChangeUp.size(); i++) {
-                float x = currChangeUp[i];
-                changeUpCDFs.push_back(
-                    1 - cumulativeDensityFunction(mean, this->sigma, x)
-                );
-            }
-            assert(changeUpCDFs.size() == prTimeSlice.size());
+
             double tempUpCross = 0;
             for (int i = 0; i < prTimeSlice.size(); i++) {
                 tempUpCross += changeUpCDFs[i] * prTimeSlice[i];
             }
-
-            std::vector<float> currChangeDown;
-            for (auto s: changeDown) {
-                currChangeDown.push_back(s.at(time));
-            }
-            std::vector<double> changeDownCDFs;
-            for (int i = 0; i < currChangeDown.size(); i++) {
-                float x = currChangeDown[i];
-                changeDownCDFs.push_back(
-                    cumulativeDensityFunction(mean, this->sigma, x)
-                );
-            }
-            assert(changeDownCDFs.size() == prTimeSlice.size());
             double tempDownCross = 0;
             for (int i = 0; i < prTimeSlice.size(); i++) {
                 tempDownCross += changeDownCDFs[i] * prTimeSlice[i];

@@ -25,7 +25,10 @@ INC := -I $(INC_DIR)
 INSTALL_LIB_DIR := /usr/lib
 INSTALL_INC_DIR := /usr/include
 
-CPP_FILES := $(wildcard $(LIB_DIR)/*.cpp)
+PY_SUFFIX := $(shell python3-config --extension-suffix)
+PY_INCLUDES := $(shell python3 -m pybind11 --includes)
+
+CPP_FILES := $(filter-out $(LIB_DIR)/bindings.cpp, $(wildcard $(LIB_DIR)/*.cpp))
 CU_FILES := $(wildcard $(LIB_DIR)/*.cu)
 CPP_OBJ_FILES := $(patsubst $(LIB_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(CPP_FILES))
 ifeq ($(MACROS),)
@@ -99,6 +102,8 @@ else
 endif 
 	cp -TRv $(INC_DIR) $(INSTALL_INC_DIR)/addm
 
+py: 
+	g++ -O3 -shared -fPIC $(PY_INCLUDES) -DEXCLUDE_CUDA_CODE -I include $(CPP_FILES) $(LIB_DIR)/bindings.cpp -o $(addsuffix $(PY_SUFFIX), addm_toolbox_gpu)
 
 .PHONY: clean
 clean:

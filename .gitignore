@@ -8,3 +8,7 @@ docs
 obj/*
 # ignore output data from pipreqs
 target 
+# python binaries
+__pycache__
+*.so
+example.py

@@ -38,9 +38,9 @@ def main():
         ax.set_ylabel('sigma')
 
         ax.set_xticks(np.arange(len(data['d'].unique())))
-        ax.set_xticklabels(data['d'].unique()[::-1])
+        ax.set_xticklabels(data['d'].unique())
         ax.set_yticks(np.arange(len(data['sigma'].unique())))
-        ax.set_yticklabels(data['sigma'].unique()[::-1])
+        ax.set_yticklabels(data['sigma'].unique())
 
         fig.colorbar(heatmap, ax=ax)
 

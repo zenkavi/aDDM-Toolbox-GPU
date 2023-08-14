@@ -32,13 +32,13 @@ void getTrialLikelihoodKernel(
     int nonDecisionTime, 
     int timeStep, 
     float approxStateStep, 
-    float dec) {
+    float dec,
+    double *prStates, 
+    double* prStatesNew) {
 
     int tid = blockIdx.x * blockDim.x + threadIdx.x; 
     if (tid < numTrials / trialsPerThread) {
-        double *prStates = new double[numStates];
         float *probDistChangeMatrix = new float[numStates * numStates];
-        double* prStatesNew = new double[numStates];
         float *changeUpCDFs = new float[numStates];
         float *changeDownCDFs = new float[numStates];
         float *changeMatrix = new float[numStates * numStates];
@@ -54,6 +54,7 @@ void getTrialLikelihoodKernel(
             int *fixTime = new int[fixLen];
 
             int f_idx = 0; 
+            #pragma unroll 4
             for (int i = trialNum * maxFixLen; i < trialNum * maxFixLen + fixLen; i++) {
                 fixItem[f_idx] = FixItemsMatrix[i];
                 fixTime[f_idx] = FixTimeMatrix[i];
@@ -78,17 +79,20 @@ void getTrialLikelihoodKernel(
             float* barrierUp = new float[numTimeSteps];
             float *barrierDown = new float[numTimeSteps];
 
+            #pragma unroll 4
             for (int i = 0 ; i < numTimeSteps; i++) {
                 barrierUp[i] = barrier / (1 + (dec * i));
                 barrierDown[i] = -barrier / (1 + (dec * i));
             }
 
+            #pragma unroll 4
             for (int i = 0; i < numStates; i++) {
-                prStates[i] = (i == biasState) ? 1 : 0; 
+                prStates[__RC2IDX(trialNum, i, numStates)] = (i == biasState) ? 1 : 0; 
             }
 
             double *probUpCrossing = new double[numTimeSteps];
             double *probDownCrossing = new double[numTimeSteps];
+            #pragma unroll 4
             for (int i = 0; i < numTimeSteps; i++) {
                 probUpCrossing[i] = 0; 
                 probDownCrossing[i] = 0; 
@@ -96,26 +100,32 @@ void getTrialLikelihoodKernel(
 
             if (debug) {
                 for (int i = 0 ; i < numStates ; i++) {
-                    printf("prStates[%i] = %f\n", i, prStates[i]);
+                    printf("prStates[%i] = %f\n", i, prStates[__RC2IDX(trialNum, i, numStates)]);
                 }
             }
 
             int time = 1;
+            #pragma unroll 4
             for (int i = 0; i < numStates; i++) {
+                #pragma unroll 4
                 for (int j = 0; j < numStates; j++) {
                     changeMatrix[__RC2IDX(i, j, numStates)] = states[i] - states[j];
                 }
             }
 
             float *changeUp = new float[numStates * numTimeSteps];
+            #pragma unroll 4
             for (int i = 0; i < numStates; i++) {
+                #pragma unroll 4
                 for (int j = 0; j < numTimeSteps; j++) {
                     changeUp[__RC2IDX(i, j, numTimeSteps)] = barrierUp[j] - states[i];
                 }
             }
 
             float *changeDown = new float[numStates * numTimeSteps];
+            #pragma unroll 4
             for (int i = 0; i < numStates; i++) {
+                #pragma unroll 4
                 for (int j = 0; j < numTimeSteps; j++) {
                     changeDown[__RC2IDX(i, j, numTimeSteps)] = barrierDown[j] - states[i];
                 }
@@ -138,7 +148,9 @@ void getTrialLikelihoodKernel(
                     mean = 0; 
                 }
 
+                #pragma unroll 4
                 for (int i = 0; i < numStates; i++) {
+                    #pragma unroll 4
                     for (int j = 0; j < numStates; j++) {
                         float x = changeMatrix[__RC2IDX(i, j, numStates)];
                         probDistChangeMatrix[__RC2IDX(i, j, numStates)] = __pdf(x, mean, sigma);
@@ -154,14 +166,15 @@ void getTrialLikelihoodKernel(
                     }
                 }
 
-
                 double tempUpCross; 
                 double tempDownCross; 
                 if (dec == 0) {
+                    #pragma unroll 4 
                     for (int i = 0; i < numStates; i++) {
                         float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
                         changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
                     }    
+                    #pragma unroll 4
                     for (int i = 0; i < numStates; i++) {
                         float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
                         changeDownCDFs[i] = normcdff((x - mean) / sigma);
@@ -173,18 +186,19 @@ void getTrialLikelihoodKernel(
                     for (int i = 0; i < numStates; i++) {
                         rowSum = 0; 
                         for (int j = 0; j < numStates; j++) {
-                            rowSum += stateStep * probDistChangeMatrix[__RC2IDX(i, j, numStates)] * prStates[j];
+                            rowSum += stateStep * probDistChangeMatrix[__RC2IDX(i, j, numStates)] * prStates[__RC2IDX(trialNum, j, numStates)];
                         }
-                        prStatesNew[i] = (states[i] > barrierUp[time] || states[i] < barrierDown[time]) ? 0 : rowSum;
+                        prStatesNew[__RC2IDX(trialNum, i, numStates)] = (states[i] > barrierUp[time] || states[i] < barrierDown[time]) ? 0 : rowSum;
                     }
 
                     if (debug) {
                         for (int i = 0 ; i < numStates ; i++) {
-                            printf("prStatesNew[%i] = %f\n", i, prStatesNew[i]);
+                            printf("prStatesNew[%i] = %f\n", i, prStatesNew[__RC2IDX(trialNum, i, numStates)]);
                         }
                     }
 
                     if (dec != 0) {
+                        #pragma unroll 4 
                         for (int i = 0; i < numStates; i++) {
                             float x = changeUp[__RC2IDX(i, time, numTimeSteps)];
                             changeUpCDFs[i] = 1 - normcdff((x - mean) / sigma);
@@ -193,7 +207,8 @@ void getTrialLikelihoodKernel(
                             for (int i = 0; i < numStates; i++) {
                                 printf("changeUpCDFs[%i] = %f\n", i, changeUpCDFs[i]);
                             }
-                        }                    
+                        }
+                        #pragma unroll 4                    
                         for (int i = 0; i < numStates; i++) {
                             float x = changeDown[__RC2IDX(i, time, numTimeSteps)];
                             changeDownCDFs[i] = normcdff((x - mean) / sigma);
@@ -207,22 +222,26 @@ void getTrialLikelihoodKernel(
 
                     tempUpCross = 0; 
                     for (int i = 0; i < numStates; i++) {
-                        tempUpCross += changeUpCDFs[i] * prStates[i];
+                        tempUpCross += changeUpCDFs[i] * prStates[__RC2IDX(trialNum, i, numStates)];
                     }     
                     tempDownCross = 0; 
                     for (int i = 0; i < numStates; i++) {
-                        tempDownCross += changeDownCDFs[i] * prStates[i];
+                        tempDownCross += changeDownCDFs[i] * prStates[__RC2IDX(trialNum, i, numStates)];
                     }     
 
                     double sumIn = 0; 
                     double sumCurrent = tempUpCross + tempDownCross; 
+
+                    #pragma unroll 4
                     for (int i = 0; i < numStates; i++) {
-                        sumIn += prStates[i];
-                        sumCurrent += prStatesNew[i];
+                        sumIn += prStates[__RC2IDX(trialNum, i, numStates)];
+                        sumCurrent += prStatesNew[__RC2IDX(trialNum, i, numStates)];
                     }
                     double normFactor = sumIn / sumCurrent; 
+
+                    #pragma unroll 4
                     for (int i = 0; i < numStates; i++) {
-                        prStates[i] = prStatesNew[i] * normFactor; 
+                        prStates[__RC2IDX(trialNum, i, numStates)] = prStatesNew[__RC2IDX(trialNum, i, numStates)] * normFactor; 
                     }
 
                     probUpCrossing[time] = tempUpCross * normFactor; 
@@ -257,11 +276,9 @@ void getTrialLikelihoodKernel(
             }   
             likelihoods[trialNum] = likelihood;            
         }
-
-        delete[] prStates; 
+ 
         delete[] changeMatrix; 
         delete[] probDistChangeMatrix;
-        delete[] prStatesNew;
         delete[] changeUpCDFs;
         delete[] changeDownCDFs;
     }
@@ -380,6 +397,10 @@ void aDDM::callGetTrialLikelihoodKernel(
     cudaMalloc((void**) &d_states, numStates * sizeof(float));
     cudaMemcpy(d_states, states, numStates * sizeof(float), cudaMemcpyHostToDevice);
 
+    double *d_prStates, *d_prStatesNew; 
+    cudaMalloc((void**) &d_prStates, numStates * numTrials * sizeof(double));
+    cudaMalloc((void**) &d_prStatesNew, numStates * numTrials * sizeof(double));
+
     getTrialLikelihoodKernel<<<numBlocks, threadsPerBlock>>>(
         debug, 
         trialsPerThread, 
@@ -401,7 +422,9 @@ void aDDM::callGetTrialLikelihoodKernel(
         nonDecisionTime, 
         timeStep, 
         approxStateStep, 
-        decay
+        decay,
+        d_prStates, 
+        d_prStatesNew
     );
 
     cudaFree(d_RTs);
@@ -411,6 +434,8 @@ void aDDM::callGetTrialLikelihoodKernel(
     cudaFree(d_FIs);
     cudaFree(d_FTs);
     cudaFree(d_FixLens);
+    cudaFree(d_prStates);
+    cudaFree(d_prStatesNew);
     delete[] h_RTs;
     delete[] h_choices; 
     delete[] h_VLs;
