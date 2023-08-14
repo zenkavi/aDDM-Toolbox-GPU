@@ -1,6 +1,6 @@
 # aDDM-Toolbox-GPU #
 
-This toolbox can be used to perform model fitting and data simulation for the Drift Diffusion Model (DDM) and the attentional Drift Diffusion Model (aDDM). It is aimed to provide computational speedup, employing GPU optimizations for parameter estimations. 
+This toolbox can be used to perform model fitting and data simulation for the Drift Diffusion Model (DDM) and the attentional Drift Diffusion Model (aDDM). It is aimed to provide computational speedup, employing GPU optimizations for parameter estimation. 
 
 ## Requirements ##
 
@@ -66,7 +66,7 @@ int main() {
 
 When compiling any code using the toolbox, include the `-laddm` flag to link with the installed shared object library.
 
-```shell
+```
 $ nvcc -o main main.cpp -laddm
 $ ./main
 d: 0.005
@@ -75,6 +75,45 @@ theta: 0.5
 ```
 
 *Note that __nvcc__ is assumed to be at least __version 12.2__. The compiler path may need to be modified to support this requirement.*
+
+## Python Bindings ## 
+
+Python bindings are also provided for users who prefer to work with a Python codebase over C++. The provided bindings are located in [lib/bindings.cpp](lib/bindings.cpp). Note that [pybind11](https://github.com/pybind/pybind11) and Python version 3.10 (at a minimum) are __strict__ prerequisites for installation and usage of the Python code. These can be installed with 
+
+```shell
+apt-get install python3.10
+pip3 install pybind11
+```
+
+Once `pybind11` and Python3.10 are installed, the module can be built with:
+
+```
+make python
+```
+
+This will create a shared library object in the repository's root directory containing the `addm_toolbox_gpu` module. Although function calls remain largely analogous with the original C++ code, an example is described below that can be used to ensure the code is working properly: 
+
+`main.py`: 
+
+```Python
+import addm_toolbox_gpu
+
+ddm = addm_toolbox_gpu.DDM(0.005, 0.07)
+print(f"d = {ddm.d}")
+print(f"sigma = {ddm.sigma}")
+
+trial = ddm.simulateTrial(3, 7, 10, 540)
+print(f"RT = {trial.RT}")
+print(f"choice = {trial.choice}")
+```
+To run the code: 
+```
+$ python3 main.py
+d = 0.005
+sigma = 0.07
+RT = 850
+choice = 1
+```
 
 ## Examples ##
 
