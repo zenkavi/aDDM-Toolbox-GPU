@@ -57,6 +57,7 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
         .def_readonly("nonDecisionTime", &DDM::nonDecisionTime)
         .def_readonly("bias", &DDM::bias)
         .def_readonly("decay", &DDM::decay)
+        .def("exportTrial", &DDM::exportTrial)
         .def("getTrialLikelihood", &DDM::getTrialLikelihood, 
             Arg("trial"), 
             Arg("debug")=false, 
@@ -65,28 +66,31 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
         .def("simulateTrial", &DDM::simulateTrial, 
             Arg("valueLeft"), 
             Arg("valueRight"),
-            Arg("timeStep")=1, 
+            Arg("timeStep")=10, 
             Arg("seed")=-1)
         .def("computeParallelNLL", &DDM::computeParallelNLL, 
             Arg("trials"), 
             Arg("debug")=false, 
             Arg("timeStep")=10, 
             Arg("approxStateStep")=0.1)
-        .def("get_d", 
-            [](const DDM &ddm){
-                return ddm.d; 
-            }
-        )
 #ifndef EXCLUDE_CUDA_CODE 
-        .def("compute_GPUNLL", &DDM::computeGPUNLL)
+        .def("compute_GPUNLL", &DDM::computeGPUNLL,
+            Arg("trials"), 
+            Arg("debug")=false, 
+            Arg("trialsPerThread")=10,
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
 #endif   
         .def_static("fitModelMLE", &DDM::fitModelMLE, 
             Arg("trials"), 
             Arg("rangeD"), 
             Arg("rangeSigma"), 
-            Arg("barrier"), 
             Arg("computeMethod")="basic", 
-            Arg("normalizePosteriors")=false);
+            Arg("normalizePosteriors")=false,
+            Arg("barrier")=1, 
+            Arg("nonDecisionTime")=0,
+            Arg("bias")=vector<float>{0}, 
+            Arg("decay")=vector<float>{0});
     py::class_<aDDMTrial, DDMTrial>(m, "aDDMTrial")
         .def(py::init<unsigned int, int, int, int, vector<int>, vector<int>, vector<float>, float>(), 
             Arg("RT"), 
@@ -113,6 +117,7 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
             Arg("bias")=0, 
             Arg("decay")=0)
         .def_readonly("theta", &aDDM::theta)
+        .def("exportTrial", &aDDM::exportTrial)
         .def("getTrialLikelihood", &aDDM::getTrialLikelihood, 
             Arg("trial"), 
             Arg("debug")=false, 
@@ -124,8 +129,8 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
             Arg("fixationData"), 
             Arg("timeStep")=10, 
             Arg("numFixDists")=3, 
-            Arg("fixationDist")=vector<int>(), 
-            Arg("timeBins")=fixDists(), 
+            Arg("fixationDist")=fixDists(), 
+            Arg("timeBins")=vector<int>(), 
             Arg("seed")=-1)
         .def("computeParallelNLL", &aDDM::computeParallelNLL, 
             Arg("trials"), 
@@ -133,7 +138,12 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
             Arg("timeStep")=10, 
             Arg("approxStateStep")=0.1)
 #ifndef EXCLUDE_CUDA_CODE
-        .def("computeGPUNLL", &aDDM::computeGPUNLL)
+        .def("computeGPUNLL", &aDDM::computeGPUNLL,
+            Arg("trials"), 
+            Arg("debug")=false, 
+            Arg("trialsPerThread")=10,
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
 #endif
         .def_static("fitModelMLE", &aDDM::fitModelMLE, 
             Arg("trials"), 
@@ -145,4 +155,17 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
             Arg("normalizePosteriors")=false);
     declareMLEinfo<DDM>(m, "DDM"); 
     declareMLEinfo<aDDM>(m, "aDDM");
+    m.def("loadDataFromSingleCSV", &loadDataFromSingleCSV);
+    m.def("loadDataFromCSV", &loadDataFromCSV);
+    m.def("getEmpiricalDistributions", &getEmpiricalDistributions, 
+        Arg("data"), 
+        Arg("timeStep")=10, 
+        Arg("maxFixTime")=3000, 
+        Arg("numFixDists")=3, 
+        Arg("valueDiffs")=vector<int>{-3,-2,-1,0,1,2,3}, 
+        Arg("subjectIDs")=vector<int>(), 
+        Arg("useOddTrials")=true, 
+        Arg("useEvenTrials")=true, 
+        Arg("useCisTrials")=true, 
+        Arg("useTransTrials")=true); 
 }

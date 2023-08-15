@@ -330,18 +330,18 @@ Examples of MLE calculations are described below:
 #include <addm/gpu_toolbox.h>
 #include <iostream>
 
-using namespace std::chrono;
+using namespace std;
 
-std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};
-std::vector<float> rangeSigma = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09};
+vector<float> rangeD = {0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009};
+vector<float> rangeSigma = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09};
 
 int barrier = 1;
 
 int main() {
-    std::vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("data/ddm_sims.csv"); 
-    std::cout << "Counted " << trials.size() << " trials." << std::endl;
+    vector<DDMTrial> trials = DDMTrial::loadTrialsFromCSV("data/ddm_sims.csv"); 
+    cout << "Counted " << trials.size() << " trials." << endl;
     MLEinfo<DDM> info = DDM::fitModelMLE(trials, rangeD, rangeSigma, barrier, "gpu", true);
-    std::cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << std::endl; 
+    cout << "Optimal d=" << info.optimal.d << " sigma=" << info.optimal.sigma << endl; 
 }
 ```
 Output: 
@@ -356,23 +356,23 @@ Optimal d=0.005 sigma=0.07
 #include <addm/gpu_toolbox.h>
 #include <iostream>
 
-using namespace std::chrono;
+using namespace std;
 
-std::vector<float> rangeD = {0.003, 0.004, 0.005};
-std::vector<float> rangeSigma = {0.06, 0.07, 0.08};
-std::vector<float> rangeTheta = {0.5, 0.6, 0.7};
+vector<float> rangeD = {0.003, 0.004, 0.005};
+vector<float> rangeSigma = {0.06, 0.07, 0.08};
+vector<float> rangeTheta = {0.5, 0.6, 0.7};
 
 int barrier = 1;
 int valueLeft = 3; 
 
 int main() {
-    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("data/addm_sims.csv");
-    std::cout << "Counted " << trials.size() << " trials." << std::endl;
+    vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("data/addm_sims.csv");
+    cout << "Counted " << trials.size() << " trials." << endl;
     MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread", true);
-    std::cout << "Optimal d=" << info.optimal.d << 
+    cout << "Optimal d=" << info.optimal.d << 
                  " sigma=" << info.optimal.sigma << 
                  " theta=" << info.optimal.theta << 
-                 std::endl;    
+                 endl;    
 }
 ```
 Output:
@@ -380,6 +380,10 @@ Output:
 Counted 1000 trials. 
 Optimal d=0.005 sigma=0.07 theta=0.5
 ```
+
+## Built-in Scripts ##
+
+
 
 ## Authors ## 
 

@@ -156,7 +156,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
 
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 
-    int timeStep, int MaxFixTime,
+    int timeStep, int maxFixTime,
     int numFixDists, 
     std::vector<int> valueDiffs,
     std::vector<int> subjectIDs,
@@ -223,7 +223,7 @@ FixationData getEmpiricalDistributions(
                         latency += trial.fixTime.at(i);
                     } else if (
                         trial.fixTime.at(i) >= timeStep &&
-                        trial.fixTime.at(i) <= MaxFixTime
+                        trial.fixTime.at(i) <= maxFixTime
                         ) {
                         transitions.push_back(trial.fixTime.at(i));
                     }
@@ -239,7 +239,7 @@ FixationData getEmpiricalDistributions(
                         }
                     }
                     if (trial.fixTime.at(i) >= timeStep && 
-                        trial.fixTime.at(i) <= MaxFixTime) {
+                        trial.fixTime.at(i) <= maxFixTime) {
                         if (!fixations.count(fixNumber)) {
                             fixations.insert({fixNumber, {}});
                         }
@@ -254,41 +254,4 @@ FixationData getEmpiricalDistributions(
     }
     float probFixLeftFirst = (float) countLeftFirst / (float) countTotalTrials;
     return FixationData(probFixLeftFirst, latencies, transitions, fixations);
-}
-
-void DDMexportTrial(DDM ddm, DDMTrial dt, std::string filename) {
-    std::ofstream o(filename);
-    json j;
-    j["d"] = ddm.d;
-    j["sigma"] = ddm.sigma;
-    j["barrier"] = ddm.barrier;
-    j["NDT"] = ddm.nonDecisionTime;
-    j["bias"] = ddm.bias;
-    j["RT"] = dt.RT;
-    j["choice"] = dt.choice;
-    j["vl"] = dt.valueLeft;
-    j["vr"] = dt.valueRight;
-    j["RDVs"] = dt.RDVs;
-    j["timeStep"] = dt.timeStep;
-    o << std::setw(4) << j << std::endl;        
-}
-
-void aDDMexportTrial(aDDM addm, aDDMTrial adt, std::string filename) {
-    std::ofstream o(filename);
-    json j;
-    j["d"] = addm.d;
-    j["sigma"] = addm.sigma;
-    j["theta"] = addm.theta;
-    j["barrier"] = addm.barrier;
-    j["NDT"] = addm.nonDecisionTime;
-    j["bias"] = addm.bias;
-    j["RT"] = adt.RT;
-    j["choice"] = adt.choice;
-    j["vl"] = adt.valueLeft;
-    j["vr"] = adt.valueRight;
-    j["RDVs"] = adt.RDVs;
-    j["fixItem"] = adt.fixItem;
-    j["fixTime"] = adt.fixTime;
-    j["timeStep"] = adt.timeStep;
-    o << std::setw(4) << j << std::endl;        
 }

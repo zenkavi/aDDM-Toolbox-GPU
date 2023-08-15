@@ -34,6 +34,23 @@ DDM::DDM(float d, float sigma, float barrier, unsigned int nonDecisionTime, floa
     this->decay = decay; 
 }
 
+void DDM::exportTrial(DDMTrial dt, std::string filename) {
+    std::ofstream o(filename);
+    json j;
+    j["d"] = d;
+    j["sigma"] = sigma;
+    j["barrier"] = barrier;
+    j["NDT"] = nonDecisionTime;
+    j["bias"] = bias;
+    j["RT"] = dt.RT;
+    j["choice"] = dt.choice;
+    j["vl"] = dt.valueLeft;
+    j["vr"] = dt.valueRight;
+    j["RDVs"] = dt.RDVs;
+    j["timeStep"] = dt.timeStep;
+    o << std::setw(4) << j << std::endl;        
+}
+
 double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float approxStateStep) {
     int numTimeSteps = trial.RT / timeStep;
     if (numTimeSteps < 1) {
@@ -417,7 +434,11 @@ std::vector<DDMTrial> DDMTrial::loadTrialsFromCSV(std::string filename) {
     return trials; 
 }
 
-MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> rangeD, std::vector<float> rangeSigma, float barrier, std::string computeMethod, bool normalizePosteriors) {
+MLEinfo<DDM> DDM::fitModelMLE(vector<DDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
+    string computeMethod, bool normalizePosteriors, 
+    float barrier, unsigned int nonDecisionTime, 
+    vector<float> bias, vector<float> decay) {
+
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
     } 
@@ -428,8 +449,13 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
     std::vector<DDM> potentialModels; 
     for (float d : rangeD) {
         for (float sigma : rangeSigma) {
-            DDM ddm = DDM(d, sigma, barrier);
-            potentialModels.push_back(ddm);
+            for (float b : bias) {
+                for (float dec : decay) {
+                    DDM ddm = DDM(d, sigma, barrier, nonDecisionTime, b, dec);
+                    potentialModels.push_back(ddm);
+                } 
+            }
+            
         }
     }
 
@@ -476,7 +502,11 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
         } else {
             posteriors.insert({ddm, aux.NLL});
         }
-        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma << " NLL=" << aux.NLL << std::endl; 
+        std::cout << "testing d=" << ddm.d << " sigma=" << ddm.sigma; 
+        if (bias.size() > 1) {
+            std::cout << " bias=" << ddm.bias; 
+        } 
+        std::cout << " NLL=" << aux.NLL << std::endl; 
         if (aux.NLL < minNLL) {
             minNLL = aux.NLL; 
             optimal = ddm; 
@@ -506,12 +536,6 @@ MLEinfo<DDM> DDM::fitModelMLE(std::vector<DDMTrial> trials, std::vector<float> r
                     p.second *= normalizer; 
                 } 
             }
-        }
-
-        for (const auto &pair : posteriors) {
-            DDM curr = pair.first; 
-            double l = pair.second; 
-            std::cout << curr.d << " " << curr.sigma << " " << l << std::endl; 
         }
     }
     MLEinfo<DDM> info;

@@ -1,62 +1,37 @@
 #include <iostream>
 #include <vector> 
 #include <random>
-#include <ctime>
 #include <fstream>
-#include <sstream>
+#include <ctime>
 #include <addm/gpu_toolbox.h>
 
-std::vector<float> rangeD = {0.003, 0.004, 0.005, 0.006};
-std::vector<float> rangeSigma = {0.06, 0.07, 0.08, 0.09};
-std::vector<float> rangeTheta = {0.4, 0.5, 0.6, 0.7};
+
+using namespace std::chrono;
+
+std::vector<float> rangeD = {0.0035, 0.005, 0.0065, 0.008};
+std::vector<float> rangeSigma = {0.06, 0.065, 0.07, 0.075};
+std::vector<float> rangeTheta = {0.35, 0.5, 0.65, 0.8};
 
 int barrier = 1;
-int valueLeft = 3; 
 
 int main() {
-    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("results/addm_simulations.csv"); 
-    std::vector<aDDM> addms;
-    std::cout << "Counted " << trials.size() << " trials." << std::endl;
-
-    for (float d : rangeD) {
-        for (float sigma : rangeSigma) {
-            for (float theta: rangeTheta) {
-                addms.push_back(aDDM(d, sigma, theta, barrier));
-            }
-        }
-    }
-
-    std::ofstream fp;
-    fp.open("results/addm_mle.csv");
-    fp << "d,sigma,theta,NLL\n";
-
-    double minNLL = __DBL_MAX__;
-    double minD = 0;
-    double minSigma = 0; 
-    double minTheta = 0; 
-    for (aDDM addm : addms) {
-        std::cout << "Testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << std::endl;
-        double NLL = 0; 
-        for (aDDMTrial adt : trials) {
-            double prob = addm.getTrialLikelihood(adt);
-            NLL += -log(prob);
-        }
-        std::cout << "NLL=" << NLL << std::endl;
-        if (NLL < minNLL) {
-            minNLL = NLL;
-            minD = addm.d;
-            minSigma = addm.sigma;
-            minTheta = addm.theta;
-        }
-        fp << addm.d << "," << addm.sigma << "," << addm.theta << "," << NLL << "\n";
-    }
-    fp.close();
-
+    std::vector<aDDMTrial> trials = aDDMTrial::loadTrialsFromCSV("results/addm_simulations.csv");
+    auto start = high_resolution_clock::now(); 
+    MLEinfo info = aDDM::fitModelMLE(trials, rangeD, rangeSigma, rangeTheta, barrier, "thread", false);
+    auto stop = high_resolution_clock::now(); 
+    auto duration = duration_cast<seconds>(stop - start);
     std::cout << 
     "  Optimal Parameters  \n" << 
     "======================\n" <<
-    "d      : " << minD << "\n" << 
-    "sigma  : " << minSigma << "\n" << 
-    "theta  : " << minTheta << "\n" << 
-    "NLL    : " << minNLL << std::endl;
+    "d      : " << info.optimal.d << "\n" << 
+    "sigma  : " << info.optimal.sigma << "\n" << 
+    "theta  : " << info.optimal.theta << "\n" << 
+    "time   : " << duration.count() << std::endl;
+
+    std::ofstream fp; 
+    fp.open("results/addm_mle.csv"); 
+    fp << "d,sigma,theta,NLL" << std::endl; 
+    for (auto &i : info.likelihoods) {
+        fp << i.first.d << "," << i.first.sigma << "," << i.first.theta << "," << i.second << std::endl; 
+    }
 }

@@ -41,6 +41,26 @@ aDDM::aDDM(float d, float sigma, float theta, float barrier,
         this->theta = theta;
 }
 
+void aDDM::exportTrial(aDDMTrial adt, std::string filename) {
+    std::ofstream o(filename);
+    json j;
+    j["d"] = d;
+    j["sigma"] = sigma;
+    j["theta"] = theta;
+    j["barrier"] = barrier;
+    j["NDT"] = nonDecisionTime;
+    j["bias"] = bias;
+    j["RT"] = adt.RT;
+    j["choice"] = adt.choice;
+    j["vl"] = adt.valueLeft;
+    j["vr"] = adt.valueRight;
+    j["RDVs"] = adt.RDVs;
+    j["fixItem"] = adt.fixItem;
+    j["fixTime"] = adt.fixTime;
+    j["timeStep"] = adt.timeStep;
+    o << std::setw(4) << j << std::endl;        
+}
+
 
 double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float approxStateStep) {
     if (debug) {

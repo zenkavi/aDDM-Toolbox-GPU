@@ -95,7 +95,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
  * 
  * @param data A mapping of subject IDs to vectors of each subject's corresponding aDDMTrials. 
  * @param timeStep Minimum duration of a fixation to be considered in milliseconds. 
- * @param MaxFixTime Maximum duration of a fixation to be considered, in milliseconds. 
+ * @param maxFixTime Maximum duration of a fixation to be considered, in milliseconds. 
  * @param numFixDists Integer indicating the number of fixation types to use in the fixation 
  * distributions. I.e. if set to 3, then three separate fixation typyes will be used, 
  * corresponding to the first, second, and third fixation in each trial. 
@@ -117,7 +117,7 @@ std::map<int, std::vector<aDDMTrial>> loadDataFromCSV(
  */
 FixationData getEmpiricalDistributions(
     std::map<int, std::vector<aDDMTrial>> data, 
-    int timeStep=10, int MaxFixTime=3000,
+    int timeStep=10, int maxFixTime=3000,
     int numFixDists=3, 
     std::vector<int> valueDiffs={-3,-2,-1,0,1,2,3},
     std::vector<int> subjectIDs={},
@@ -126,24 +126,6 @@ FixationData getEmpiricalDistributions(
     bool useCisTrials=true, 
     bool useTransTrials=true
     );
-
-/**
- * @brief Export the data pertaining to a single DDM and DDMTrial to a JSON file. 
- * 
- * @param ddm Model to export
- * @param dt Trial to export
- * @param filename File to store the trial information in. 
- */
-void DDMexportTrial(DDM ddm, DDMTrial dt, std::string filename);
-
-/**
- * @brief Export the data pertaining to a single aDDM and aDDMTrial to a JSON file. 
- * 
- * @param addm Model to export.
- * @param adt Trial to export. 
- * @param filename File to store the trial information in. 
- */
-void aDDMexportTrial(aDDM addm, aDDMTrial adt, std::string filename);
 
 /**
  * @brief Print a matrix stored in nested-vector format. Utility function for debugging purposes.

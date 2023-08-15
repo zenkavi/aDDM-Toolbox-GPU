@@ -121,6 +121,14 @@ class DDM {
         DDM() {}
 
         /**
+         * @brief Export the data pertaining to a single DDM and DDMTrial to a JSON file. 
+         * 
+         * @param dt Trial to export
+         * @param filename File to store the trial information in. 
+         */
+        void exportTrial(DDMTrial dt, std::string filename); 
+
+        /**
          * @brief Compute the likelihood of the trial results provided the current parameters. 
          * 
          * @param trial DDMTrial object. 
@@ -189,20 +197,35 @@ class DDM {
          * @param trials Vector of DDMTrials that each model should calculate the NLL for. 
          * @param rangeD Vector of floats representing possible values of d to dest for. 
          * @param rangeSigma Vector of floats representing possible values of sigma to test for. 
-         * @param barrier Positive magnitude of the sigmal threshold. 
          * @param computeMethod Computation method to calculate the NLL for each possible model.
          * Allowed values are {basic, thread, gpu}. "basic" will compute each trial likelihood 
          * sequentially and compute the NLL as the sum of all negative log likelihoods. "thread" 
          * will use a thread pool to divide all trials into the maximum number of CPU threads and
          * compute the NLL of each block of trials in parallel. "gpu" will call a CUDA kernel to 
          * compute the likelihood of each trial in parallel on the GPU. 
+         * @param normalizePosteriors true if the returned MLEinfo should contain a mapping of aDDMs 
+         * to the normzlied posteriors distribution for each model; otherwise, the MLEinfo should 
+         * containing a mapping of aDDMs to its corresponding NLL. 
+         * @param barrier Positive magnitude of the sigmal threshold.
+         * @param nonDecisionTime Amount of time in milliseconds in which only noise is added to 
+         * the decision variable. 
+         * @param bias Corresponds to the initial RDV. Must be smaller than the barrier. Possible 
+         * input forms are: (1) No input - the standard bias of 0 is assumed for all potential 
+         * DDM models to check. (2) Single input (vector with one element) - i.e. {0.03} - the 
+         * specified input bias is assumed for all potential models. (3) Range of inputs - i.e. 
+         * {-0.12, 0, 0.12} - the input range is processed as another dimension to check and a 
+         * new set of models will be tested with all possible combinations of biases. 
+         * @param decay Corresponds to the decay of the barriers over time. A decay of zero
+         * means that the barriers are constant. Similar to the `bias` argument, the three 
+         * input forms of no input, a vector with single element, and a vector with a range of 
+         * elements. 
          * @return MLEinfo containing the most optimal model and a mapping of models to floats 
          * determined by the normalizePosteriors argument. 
          */
         static MLEinfo<DDM> fitModelMLE(
             vector<DDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
-            float barrier, string computeMethod="basic", bool normalizePosteriors=false
-        );
+            string computeMethod="basic", bool normalizePosteriors=false, float barrier=1, 
+            unsigned int nonDecisionTime=0, vector<float> bias={0}, vector<float> decay={0});
 };
 
 #endif

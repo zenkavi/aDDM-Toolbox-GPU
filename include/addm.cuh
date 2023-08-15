@@ -167,6 +167,14 @@ class aDDM: public DDM {
         aDDM() {}
 
         /**
+         * @brief Export the data pertaining to a single aDDM and aDDMTrial to a JSON file. 
+         * 
+         * @param adt Trial to export. 
+         * @param filename File to store the trial information in. 
+         */
+        void exportTrial(aDDMTrial adt, std::string filename);
+
+        /**
          * @brief Compute the likelihood of the trial results provided the current parameters.
          * 
          * @param trial aDDMTrial object.
