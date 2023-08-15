@@ -26,14 +26,14 @@ def main():
 
         heatmap = ax.imshow(
             np.reshape(data['NLL'], (-1, len(data['d'].unique()))),
-            cmap='YlGnBu',
+            cmap='gist_heat_r',
             extent=[0, len(data['d'].unique()) - 1, 0, len(data['sigma'].unique()) - 1],
             origin='lower',
             aspect='auto',
             vmin=vmin,
             vmax=6200
         )
-        ax.set_title(f'Theta = {theta}')
+        ax.set_title(f'theta = {theta}')
         ax.set_xlabel('d')
         ax.set_ylabel('sigma')
 

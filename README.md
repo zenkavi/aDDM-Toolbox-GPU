@@ -88,7 +88,7 @@ pip3 install pybind11
 Once `pybind11` and Python3.10 are installed, the module can be built with:
 
 ```
-make python
+make pybind
 ```
 
 This will create a shared library object in the repository's root directory containing the `addm_toolbox_gpu` module. Although function calls remain largely analogous with the original C++ code, an example is described below that can be used to ensure the code is working properly: 

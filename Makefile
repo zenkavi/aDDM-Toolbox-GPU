@@ -102,7 +102,7 @@ else
 endif 
 	cp -TRv $(INC_DIR) $(INSTALL_INC_DIR)/addm
 
-python: 
+pybind: 
 	g++ -O3 -shared -fPIC $(PY_INCLUDES) -DEXCLUDE_CUDA_CODE -I include $(CPP_FILES) $(LIB_DIR)/bindings.cpp -o $(addsuffix $(PY_SUFFIX), addm_toolbox_gpu)
 
 .PHONY: clean

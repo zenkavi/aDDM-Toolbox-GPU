@@ -1,20 +1,38 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "../include/gpu_toolbox.h"
+#include <string>
 
 namespace py = pybind11; 
 
 using namespace pybind11::literals; 
+using Arg = py::arg; 
+
+template<typename T> 
+void declareMLEinfo(py::module &m, const std::string &typestr) {
+    using Class = MLEinfo<T>; 
+    std::string pyclass_name = std::string("MLEinfo") + typestr; 
+    py::class_<Class>(m, pyclass_name.c_str())
+        .def_readonly("optimal", &Class::optimal)
+        .def_readonly("likelihoods", &Class::likelihoods);
+}
 
 PYBIND11_MODULE(addm_toolbox_gpu, m) {
     m.doc() = "aDDMToolbox for the GPU.";
     py::class_<ProbabilityData>(m, "ProbabilityData")
         .def(py::init<double, double>(), 
-            py::arg("likelihood")=0, 
-            py::arg("NLL")=0)
+            Arg("likelihood")=0, 
+            Arg("NLL")=0)
         .def_readonly("likelihood", &ProbabilityData::likelihood)
         .def_readonly("NLL", &ProbabilityData::NLL)
         .def_readonly("trialLikelihoods", &ProbabilityData::trialLikelihoods);
+    py::class_<FixationData>(m, "FixationData")
+        .def(py::init<float, vector<int>, vector<int>, fixDists>(), 
+            "Construct a Fixation Data object")
+        .def_readonly("probFixLeftFirst", &FixationData::probFixLeftFirst)
+        .def_readonly("latencies", &FixationData::latencies)
+        .def_readonly("transitions", &FixationData::transitions)
+        .def_readonly("fixations", &FixationData::fixations);
     py::class_<DDMTrial>(m, "DDMTrial")
         .def(py::init<int, int, int, int>(), "Create a DDMTrial")
         .def_readonly("RT", &DDMTrial::RT)
@@ -27,21 +45,104 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
         .def_static("loadTrialsFromCSV", &DDMTrial::loadTrialsFromCSV);
     py::class_<DDM>(m, "DDM")
         .def(py::init<float, float, float, unsigned int, float, float>(), 
-            py::arg("d"), 
-            py::arg("sigma"), 
-            py::arg("barrier")=1, 
-            py::arg("nonDecisionTime")=0, 
-            py::arg("bias")=0, 
-            py::arg("decay")=0)
+            Arg("d"), 
+            Arg("sigma"), 
+            Arg("barrier")=1, 
+            Arg("nonDecisionTime")=0, 
+            Arg("bias")=0, 
+            Arg("decay")=0)
         .def_readonly("d", &DDM::d)
         .def_readonly("sigma", &DDM::sigma)
         .def_readonly("barrier", &DDM::barrier)
         .def_readonly("nonDecisionTime", &DDM::nonDecisionTime)
         .def_readonly("bias", &DDM::bias)
         .def_readonly("decay", &DDM::decay)
+        .def("getTrialLikelihood", &DDM::getTrialLikelihood, 
+            Arg("trial"), 
+            Arg("debug")=false, 
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
         .def("simulateTrial", &DDM::simulateTrial, 
-            py::arg("valueLeft"), 
-            py::arg("valueRight"),
-            py::arg("timeStep")=1, 
-            py::arg("seed")=-1);
+            Arg("valueLeft"), 
+            Arg("valueRight"),
+            Arg("timeStep")=1, 
+            Arg("seed")=-1)
+        .def("computeParallelNLL", &DDM::computeParallelNLL, 
+            Arg("trials"), 
+            Arg("debug")=false, 
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
+        .def("get_d", 
+            [](const DDM &ddm){
+                return ddm.d; 
+            }
+        )
+#ifndef EXCLUDE_CUDA_CODE 
+        .def("compute_GPUNLL", &DDM::computeGPUNLL)
+#endif   
+        .def_static("fitModelMLE", &DDM::fitModelMLE, 
+            Arg("trials"), 
+            Arg("rangeD"), 
+            Arg("rangeSigma"), 
+            Arg("barrier"), 
+            Arg("computeMethod")="basic", 
+            Arg("normalizePosteriors")=false);
+    py::class_<aDDMTrial, DDMTrial>(m, "aDDMTrial")
+        .def(py::init<unsigned int, int, int, int, vector<int>, vector<int>, vector<float>, float>(), 
+            Arg("RT"), 
+            Arg("choice"), 
+            Arg("valueLeft"), 
+            Arg("valueRight"), 
+            Arg("fixItem")=vector<int>(), 
+            Arg("fixTime")=vector<int>(), 
+            Arg("fixRDV")=vector<float>(), 
+            Arg("uninterruptedLastFixTime")=0)
+        .def_readonly("fixItem", &aDDMTrial::fixItem)
+        .def_readonly("fixTime", &aDDMTrial::fixTime)
+        .def_readonly("fixRDV", &aDDMTrial::fixRDV)
+        .def_readonly("uninterruptedLastFixTime", &aDDMTrial::uninterruptedLastFixTime)
+        .def_static("writeTrialsToCSV", &aDDMTrial::writeTrialsToCSV)
+        .def_static("loadTrialsFromCSV", &aDDMTrial::loadTrialsFromCSV);
+    py::class_<aDDM, DDM>(m, "aDDM")
+        .def(py::init<float, float, float, float, unsigned int, float, float>(), 
+            Arg("d"), 
+            Arg("sigma"), 
+            Arg("theta"), 
+            Arg("barrier")=1, 
+            Arg("nonDecisionTime")=0, 
+            Arg("bias")=0, 
+            Arg("decay")=0)
+        .def_readonly("theta", &aDDM::theta)
+        .def("getTrialLikelihood", &aDDM::getTrialLikelihood, 
+            Arg("trial"), 
+            Arg("debug")=false, 
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
+        .def("simulateTrial", &aDDM::simulateTrial, 
+            Arg("valueLeft"), 
+            Arg("valueRight"), 
+            Arg("fixationData"), 
+            Arg("timeStep")=10, 
+            Arg("numFixDists")=3, 
+            Arg("fixationDist")=vector<int>(), 
+            Arg("timeBins")=fixDists(), 
+            Arg("seed")=-1)
+        .def("computeParallelNLL", &aDDM::computeParallelNLL, 
+            Arg("trials"), 
+            Arg("debug")=false, 
+            Arg("timeStep")=10, 
+            Arg("approxStateStep")=0.1)
+#ifndef EXCLUDE_CUDA_CODE
+        .def("computeGPUNLL", &aDDM::computeGPUNLL)
+#endif
+        .def_static("fitModelMLE", &aDDM::fitModelMLE, 
+            Arg("trials"), 
+            Arg("rangeD"), 
+            Arg("rangeSigma"), 
+            Arg("rangeTheta"),
+            Arg("barrier")=1, 
+            Arg("computeMethod")="basic", 
+            Arg("normalizePosteriors")=false);
+    declareMLEinfo<DDM>(m, "DDM"); 
+    declareMLEinfo<aDDM>(m, "aDDM");
 }

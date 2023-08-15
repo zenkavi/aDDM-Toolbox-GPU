@@ -8,7 +8,6 @@
 #include <time.h>
 #include <cstdlib>
 #include <random> 
-#include "nlohmann/json.hpp"
 #include "ddm.cuh"
 #include "util.h"
 #include "addm.cuh"
