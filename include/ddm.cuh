@@ -97,7 +97,10 @@ class DDM {
         float decay; /**< Parameter that controls the decay of the barriers over time. A decay of 
             zero means the barriers are constant. */
 
-        bool operator <( const DDM &rhs ) const { return (d + sigma < rhs.d + rhs.sigma); }
+        bool operator <( const DDM &rhs ) const { 
+            return (d * 17) + (sigma * 31) + (bias * 43) + (decay * 59) < 
+                (rhs.d * 17) + (rhs.sigma * 31) + (rhs.bias * 43) + (rhs.decay * 59);
+        }
 
         /**
          * @brief Construct a new DDM object.
@@ -225,7 +228,8 @@ class DDM {
         static MLEinfo<DDM> fitModelMLE(
             vector<DDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
             string computeMethod="basic", bool normalizePosteriors=false, float barrier=1, 
-            unsigned int nonDecisionTime=0, vector<float> bias={0}, vector<float> decay={0});
+            unsigned int nonDecisionTime=0, vector<float> bias={0}, vector<float> decay={0}
+        );
 };
 
 #endif

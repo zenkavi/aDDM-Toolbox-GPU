@@ -115,15 +115,14 @@ double aDDM::getTrialLikelihood(aDDMTrial trial, bool debug, int timeStep, float
     // Values of barriers over time 
     std::vector<float> barrierUp(numTimeSteps);
     std::vector<float> barrierDown(numTimeSteps);
+    std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
+    std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
     if (this->decay != 0) {
         for (int i = 1; i < numTimeSteps; i++) {
             barrierUp.at(i) = this->barrier / (1 + (this->decay * i));
             barrierDown.at(i) = -this->barrier / (1 + (this->decay * i));
         }
-    } else {
-        std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
-        std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
-    }
+    } 
     
     // Obtain the correct state step
     int halfNumStateBins = ceil(this->barrier / approxStateStep); 
@@ -663,9 +662,12 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
     std::vector<float> rangeD, 
     std::vector<float> rangeSigma, 
     std::vector<float> rangeTheta, 
-    float barrier, 
     std::string computeMethod, 
-    bool normalizePosteriors) {
+    bool normalizePosteriors,
+    float barrier,
+    unsigned int nonDecisionTime,
+    std::vector<float> bias, 
+    std::vector<float> decay) {
 
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
@@ -674,17 +676,23 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
     sort(rangeD.begin(), rangeD.end());
     sort(rangeSigma.begin(), rangeSigma.end());
     sort(rangeTheta.begin(), rangeTheta.end()); 
+    sort(bias.begin(), bias.end());
+    sort(decay.begin(), decay.end());
 
     std::vector<aDDM> potentialModels; 
     for (float d : rangeD) {
         for (float sigma : rangeSigma) {
             for (float theta : rangeTheta) {
-                aDDM addm = aDDM(d, sigma, theta, barrier);
-                potentialModels.push_back(addm);
+                for (float b : bias) {
+                    for (float dec : decay) {
+                        aDDM addm = aDDM(d, sigma, theta, barrier, nonDecisionTime, b, dec);
+                        potentialModels.push_back(addm);
+                    }
+                }
             }
         }
     }
-
+                
     std::function<ProbabilityData(aDDM)> NLLcomputer; 
     if (computeMethod == "basic") {
         NLLcomputer = [trials](aDDM addm) -> ProbabilityData {
@@ -717,7 +725,7 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
     double minNLL = __DBL_MAX__; 
     std::map<aDDM, ProbabilityData> allTrialLikelihoods; 
     std::map<aDDM, float> posteriors; 
-    double numModels = rangeD.size() * rangeSigma.size() * rangeTheta.size();
+    double numModels = rangeD.size() * rangeSigma.size() * rangeTheta.size() * bias.size() * decay.size();
 
     aDDM optimal = aDDM(); 
     for (aDDM addm : potentialModels) {
@@ -729,7 +737,7 @@ MLEinfo<aDDM> aDDM::fitModelMLE(
             posteriors.insert({addm, aux.NLL});
         }
 
-        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta << " NLL=" << aux.NLL << std::endl; 
+        std::cout << "testing d=" << addm.d << " sigma=" << addm.sigma << " theta=" << addm.theta <<  " bias=" << addm.bias << " NLL=" << aux.NLL << std::endl; 
         if (aux.NLL < minNLL) {
             minNLL = aux.NLL; 
             optimal = addm; 

@@ -5,13 +5,13 @@
 #include <vector>
 #include <map>
 #include <tuple>
+#include <functional> 
 #include "ddm.cuh"
 #include "mle_info.h"
 
 using namespace std;
 using fixDists = map<int, vector<float>>; /**< Maps fixation numbers to the measured durations 
 for that fixation in the provided data. */
-
 
 /**
  * @brief Record of empirical fixation data that is used for simulating new aDDMTrials. 
@@ -140,7 +140,10 @@ class aDDM: public DDM {
         float theta; /**< Float between 0 and 1, parameter of the model which 
             controls the attentional bias.*/
 
-        bool operator <( const aDDM &rhs ) const { return (d + sigma + theta < rhs.d + rhs.sigma + rhs.theta); }
+        bool operator <( const aDDM &rhs ) const { 
+            return (d * 17) + (sigma * 31) + (theta * 43) + (bias * 59) + (decay * 73) < 
+                (rhs.d * 17) + (rhs.sigma * 31) + (rhs.theta * 43) + (rhs.bias * 59) + (rhs.decay * 73);
+        }
 
         /**
          * @brief Construct a new aDDM object.
@@ -252,7 +255,6 @@ class aDDM: public DDM {
          * @param rangeD Vector of floats representing possible values of d to test for. 
          * @param rangeSigma Vector of floats representing possible values of sigma to test for. 
          * @param rangeTheta Vector of floats representing possible values of theta to test for. 
-         * @param barrier Positive magnitude of the signal threshold. 
          * @param computeMethod Computation method to calculate the NLL for each possible model. 
          * Allowed values are {basic, thread, gpu}. "basic" will compute each trial likelihood 
          * sequentially and compute the NLL as the sum of all negative log likelihoods. "thread" will
@@ -262,13 +264,18 @@ class aDDM: public DDM {
          * @param normalizePosteriors true if the returned MLEinfo should contain a mapping of aDDMs 
          * to the normzlied posteriors distribution for each model; otherwise, the MLEinfo should 
          * containing a mapping of aDDMs to its corresponding NLL. 
+         * @param barrier Positive magnitude of the signal threshold. 
+         * @param nonDecisionTime
+         * @param bias 
+         * @param decay
          * @return MLEinfo containing the most optimal model and a mapping of models to floats 
          * determined by the normalizePosteriors argument. 
          */
         static MLEinfo<aDDM> fitModelMLE(
             vector<aDDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
-            vector<float> rangeTheta, float barrier=1, string computeMethod="basic", 
-            bool normalizePosteriors=false
+            vector<float> rangeTheta, string computeMethod="basic", bool normalizePosteriors=false, 
+            float barrier=1, unsigned int nonDecisionTime=0, vector<float> bias={0}, 
+            vector<float> decay={0}
         );
 };
 

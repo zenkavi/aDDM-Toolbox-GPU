@@ -62,16 +62,14 @@ double DDM::getTrialLikelihood(DDMTrial trial, bool debug, int timeStep, float a
 
     std::vector<float> barrierUp(numTimeSteps);
     std::vector<float> barrierDown(numTimeSteps);
+    std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
+    std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
     if (this->decay != 0) {
         for (int i = 1; i < numTimeSteps; i++) {
             barrierUp.at(i) = this->barrier / (1 + (this->decay * i));
             barrierDown.at(i) = -this->barrier / (1 + (this->decay * i));
         }
-    } else {
-        std::fill(barrierUp.begin(), barrierUp.end(), this->barrier);
-        std::fill(barrierDown.begin(), barrierDown.end(), -this->barrier);
-    }
-    
+    }     
 
     int halfNumStateBins = ceil(this->barrier / approxStateStep);
     float stateStep = this->barrier / (halfNumStateBins + 0.5);
@@ -434,10 +432,16 @@ std::vector<DDMTrial> DDMTrial::loadTrialsFromCSV(std::string filename) {
     return trials; 
 }
 
-MLEinfo<DDM> DDM::fitModelMLE(vector<DDMTrial> trials, vector<float> rangeD, vector<float> rangeSigma, 
-    string computeMethod, bool normalizePosteriors, 
-    float barrier, unsigned int nonDecisionTime, 
-    vector<float> bias, vector<float> decay) {
+MLEinfo<DDM> DDM::fitModelMLE(
+    vector<DDMTrial> trials, 
+    vector<float> rangeD, 
+    vector<float> rangeSigma, 
+    string computeMethod, 
+    bool normalizePosteriors, 
+    float barrier, 
+    unsigned int nonDecisionTime, 
+    vector<float> bias, 
+    vector<float> decay) {
 
     if (std::find(validComputeMethods.begin(), validComputeMethods.end(), computeMethod) == validComputeMethods.end()) {
         throw std::invalid_argument("Input computeMethod is invalid.");
@@ -445,6 +449,8 @@ MLEinfo<DDM> DDM::fitModelMLE(vector<DDMTrial> trials, vector<float> rangeD, vec
 
     sort(rangeD.begin(), rangeD.end());
     sort(rangeSigma.begin(), rangeSigma.end());
+    sort(bias.begin(), bias.end());
+    sort(decay.begin(), decay.end());
 
     std::vector<DDM> potentialModels; 
     for (float d : rangeD) {
@@ -455,7 +461,6 @@ MLEinfo<DDM> DDM::fitModelMLE(vector<DDMTrial> trials, vector<float> rangeD, vec
                     potentialModels.push_back(ddm);
                 } 
             }
-            
         }
     }
 
@@ -491,7 +496,7 @@ MLEinfo<DDM> DDM::fitModelMLE(vector<DDMTrial> trials, vector<float> rangeD, vec
     double minNLL = __DBL_MAX__;
     std::map<DDM, ProbabilityData> allTrialLikelihoods;
     std::map<DDM, float> posteriors; 
-    double numModels = rangeD.size() * rangeSigma.size(); 
+    double numModels = rangeD.size() * rangeSigma.size() * bias.size() * decay.size(); 
 
     DDM optimal = DDM(); 
     for (DDM ddm : potentialModels) {

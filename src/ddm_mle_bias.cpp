@@ -23,7 +23,7 @@ int main() {
 
     std::ofstream fp;
     fp.open("results/ddm_likelihoods.csv");
-    fp << "d,sigma,p\n";
+    fp << "d,sigma,bias,p\n";
     for (auto i : info.likelihoods) {
         fp << i.first.d << "," << i.first.sigma << "," << i.first.bias << "," << i.second << "\n";
     }

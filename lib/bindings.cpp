@@ -150,9 +150,11 @@ PYBIND11_MODULE(addm_toolbox_gpu, m) {
             Arg("rangeD"), 
             Arg("rangeSigma"), 
             Arg("rangeTheta"),
+            Arg("normalizePosteriors")=false,
             Arg("barrier")=1, 
-            Arg("computeMethod")="basic", 
-            Arg("normalizePosteriors")=false);
+            Arg("nonDecisionTime")=0,
+            Arg("bias")=vector<float>{0}, 
+            Arg("decay")=vector<float>{0});
     declareMLEinfo<DDM>(m, "DDM"); 
     declareMLEinfo<aDDM>(m, "aDDM");
     m.def("loadDataFromSingleCSV", &loadDataFromSingleCSV);
