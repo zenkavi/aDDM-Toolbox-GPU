@@ -1,13 +1,10 @@
-# FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
-# Lightweight option for testing that doesn't involve ubuntu
-# FROM ubuntu:22.04 # won't work bc it'd require manual cpp installation
-FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
 # Utils
 RUN apt-get update && \
-    # apt-get upgrade -y && \
-    # apt-get install -y wget && \ 
-    # apt-get install -y git && \
+    apt-get upgrade -y && \
+    apt-get install -y wget && \ 
+    apt-get install -y git && \
     apt-get install -y vim &&\
     apt install -y python3-pip
 
@@ -21,13 +18,9 @@ RUN wget -O /usr/include/c++/11/BS_thread_pool.hpp https://raw.githubusercontent
 RUN cd ~/  && \
     git clone https://github.com/jakegoldm/aDDM-Toolbox-GPU.git && \
     cd aDDM-Toolbox-GPU/ && \
-    # uncomment line in Makefile to install without CUDA - this should no longer be necessary after fixes
-    # sed -i '/DEXCLUDE/s/^#//' Makefile && \
     make install
 
 # Python dependencies
 # Make sure you're in correct directory with access to file
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-
-# Add examples in README as tests to make sure installation worked?
